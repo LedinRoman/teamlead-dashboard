@@ -59,9 +59,9 @@ export function QualityTaskTable({
     <div className="stack" style={{ gap: 8 }}>
       <div className="row">
         <label className="cycle-filter">
-          <span className="caption">Тип</span>
+          <span className="caption">Type</span>
           <select className="cycle-def-select" value={type} onChange={(event) => setType(event.target.value)}>
-            <option value="">Все</option>
+            <option value="">All</option>
             {types.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -70,29 +70,29 @@ export function QualityTaskTable({
           </select>
         </label>
         <span className="caption">
-          {rows.length} из {issues.length} · фильтр: {filterLabel(filter)}
+          {rows.length} of {issues.length} · filter: {filterLabel(filter)}
         </span>
       </div>
       {rows.length === 0 ? (
-        <p className="caption">Нет задач с выбранными фильтрами.</p>
+        <p className="caption">No issues match the selected filters.</p>
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Ключ</th>
-                <th>Название</th>
-                <th>Тип</th>
-                <th>Исполнитель</th>
+                <th>Key</th>
+                <th>Summary</th>
+                <th>Type</th>
+                <th>Assignee</th>
                 <th>
                   <Hint text={QUALITY_HINTS.firstQa}>First QA</Hint>
                 </th>
                 <th className="num">
-                  <Hint text={QUALITY_HINTS.returns}>Возвраты</Hint>
+                  <Hint text={QUALITY_HINTS.returns}>Returns</Hint>
                 </th>
-                <th>Циклы</th>
-                <th>История</th>
-                <th>Статус</th>
+                <th>Cycles</th>
+                <th>History</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -142,9 +142,9 @@ export function QualityTaskTable({
 
 function cycleSummary(issue: QualityIssueRow): string {
   const parts: string[] = [];
-  if (issue.completedCycles.length) parts.push(`${issue.completedCycles.length} закр.`);
-  if (issue.interruptedCycles.length) parts.push(`${issue.interruptedCycles.length} прерв.`);
-  if (issue.openCycle) parts.push('открыт');
+  if (issue.completedCycles.length) parts.push(`${issue.completedCycles.length} closed`);
+  if (issue.interruptedCycles.length) parts.push(`${issue.interruptedCycles.length} interrupted`);
+  if (issue.openCycle) parts.push('open');
   return parts.join(' · ') || '—';
 }
 
@@ -155,13 +155,13 @@ function cycleDetails(issue: QualityIssueRow) {
     ...(issue.openCycle ? [issue.openCycle] : []),
   ];
   if (cycles.length === 0) {
-    return <p className="caption">Возвратов в Fix не было. Это не доказательство First Pass Yield, пока задача не в Готово.</p>;
+    return <p className="caption">No returns to Fix. That is not proof of first pass yield until the issue is Done.</p>;
   }
   return (
     <ul className="quality-cycles">
       {issue.returns.map((event, index) => (
         <li key={`${event.at}-return-${index}`}>
-          <strong>Возврат</strong>
+          <strong>Return</strong>
           {' · '}
           {formatStamp(event.at)} · {event.from} → {event.to} · {event.reasonLabel}
         </li>
@@ -171,10 +171,10 @@ function cycleDetails(issue: QualityIssueRow) {
           <strong>{cycleKindLabel(cycle)}</strong>
           {' · '}
           {formatStamp(cycle.startedAt)}
-          {cycle.endedAt ? ` → ${formatStamp(cycle.endedAt)}` : ' → сейчас'}
+          {cycle.endedAt ? ` → ${formatStamp(cycle.endedAt)}` : ' → now'}
           {cycle.durationDays !== undefined ? ` · ${formatCycleDuration(cycle.durationDays)}` : ''}
-          {cycle.ageDays !== undefined ? ` · возраст ${formatCycleDuration(cycle.ageDays)}` : ''}
-          {cycle.interruptReason === 'done' ? ' · прерван Готово' : ''}
+          {cycle.ageDays !== undefined ? ` · age ${formatCycleDuration(cycle.ageDays)}` : ''}
+          {cycle.interruptReason === 'done' ? ' · interrupted by Done' : ''}
         </li>
       ))}
     </ul>
@@ -182,15 +182,15 @@ function cycleDetails(issue: QualityIssueRow) {
 }
 
 function cycleKindLabel(cycle: QualityCycle): string {
-  if (cycle.kind === 'completed') return 'Завершён';
-  if (cycle.kind === 'interrupted') return 'Прерван';
-  return 'Открыт';
+  if (cycle.kind === 'completed') return 'Completed';
+  if (cycle.kind === 'interrupted') return 'Interrupted';
+  return 'Open';
 }
 
 function historyLabel(quality: QualityIssueRow['historyQuality']): string {
-  if (quality === 'exact') return 'полная';
-  if (quality === 'partial') return 'неполная';
-  return 'нет истории';
+  if (quality === 'exact') return 'complete';
+  if (quality === 'partial') return 'partial';
+  return 'no history';
 }
 
 function historyTone(quality: QualityIssueRow['historyQuality']): 'neutral' | 'warning' | 'danger' {
@@ -202,29 +202,29 @@ function historyTone(quality: QualityIssueRow['historyQuality']): 'neutral' | 'w
 function filterLabel(filter: QualityTableFilter): string {
   switch (filter) {
     case 'returns':
-      return 'есть возвраты';
+      return 'has returns';
     case 'repeated':
-      return 'повторные возвраты';
+      return 'repeated returns';
     case 'completed':
-      return 'завершённые циклы';
+      return 'completed cycles';
     case 'open':
-      return 'открытые циклы';
+      return 'open cycles';
     case 'unknown':
-      return 'неполная история';
+      return 'incomplete history';
     case 'zero':
-      return 'без возвратов';
+      return 'no returns';
     case 'one':
-      return 'один возврат';
+      return 'one return';
     case 'two':
-      return 'два возврата';
+      return 'two returns';
     case 'threePlus':
-      return '3+ возврата';
+      return '3+ returns';
     case 'firstPass':
-      return 'первый проход без возврата';
+      return 'first pass, no return';
     case 'pending':
-      return 'первый проход ещё идёт';
+      return 'first pass still open';
     default:
-      return 'все задачи когорты';
+      return 'all cohort issues';
   }
 }
 

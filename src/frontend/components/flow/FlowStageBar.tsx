@@ -13,7 +13,7 @@ export function FlowStageBar({
   onSelect: (stage: FlowStageId) => void;
 }) {
   if (flow.stages.length === 0) {
-    return <p className="caption">Сейчас нет задач в Development WIP</p>;
+    return <p className="caption">Nothing is in Development WIP right now</p>;
   }
   return (
     <SegmentBar

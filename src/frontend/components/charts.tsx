@@ -422,10 +422,10 @@ export function CycleTimeBarChart({
       style={{ margin: 0 }}
     >
       <div className="cycle-chart-head">
-        <span className="cycle-chart-legend" aria-label="Разработка и очередь QA">
+        <span className="cycle-chart-legend" aria-label="Development and the QA queue">
           <span className="cycle-chart-legend-item">
             <span className="cycle-chart-legend-swatch cycle-chart-seg-dev" />
-            Разработка
+            Development
           </span>
           <span className="cycle-chart-legend-item">
             <span className="cycle-chart-legend-swatch cycle-chart-seg-qa" />
@@ -567,7 +567,7 @@ export function CycleTimeBarChart({
               ))}
           </span>
         ) : (
-          'Синяя часть — разработка, бирюзовая — очередь Ready to QA. Median и P85 — полный цикл.'
+          'Blue is development, teal is the Ready to QA queue. Median and P85 are the full cycle.'
         )}
       </figcaption>
     </figure>

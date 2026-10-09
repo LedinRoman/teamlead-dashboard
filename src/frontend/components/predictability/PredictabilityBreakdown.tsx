@@ -13,15 +13,15 @@ const COMMITTED_ORDER: PredictabilityCategory[] = [
 const ADDED_ORDER: PredictabilityCategory[] = ['added-completed', 'added-unfinished'];
 
 const LABELS: Record<PredictabilityCategory, string> = {
-  'committed-completed': 'Выполнено',
-  spillover: 'Перенесено',
-  'still-unfinished': 'Ещё не завершено',
-  removed: 'Удалено',
-  cancelled: 'Отменено',
-  'added-completed': 'Выполнено',
-  'added-unfinished': 'Не выполнено',
-  'already-done': 'До старта',
-  excluded: 'Исключено',
+  'committed-completed': 'Done',
+  spillover: 'Spillover',
+  'still-unfinished': 'Still open',
+  removed: 'Removed',
+  cancelled: 'Cancelled',
+  'added-completed': 'Done',
+  'added-unfinished': 'Not done',
+  'already-done': 'Before start',
+  excluded: 'Excluded',
 };
 
 const TONES: Partial<Record<PredictabilityCategory, Tone>> = {
@@ -53,10 +53,10 @@ export function PredictabilityBreakdown({
     <div className="stack" style={{ gap: 12 }}>
       <div>
         <div className="caption">
-          <Hint text={METRIC_HINTS.initial}>Первоначальный план</Hint>
+          <Hint text={METRIC_HINTS.initial}>Original plan</Hint>
         </div>
         <SegmentBar
-          caption="Committed scope к концу спринта"
+          caption="Committed scope at the end of the sprint"
           selected={selected}
           onSelect={toggle}
           segments={COMMITTED_ORDER.map((category) => {
@@ -73,10 +73,10 @@ export function PredictabilityBreakdown({
       </div>
       <div>
         <div className="caption">
-          <Hint text={METRIC_HINTS.added}>Добавлено после старта</Hint>
+          <Hint text={METRIC_HINTS.added}>Added after the start</Hint>
         </div>
         <SegmentBar
-          caption="Added scope к концу спринта"
+          caption="Added scope at the end of the sprint"
           selected={selected}
           onSelect={toggle}
           segments={ADDED_ORDER.map((category) => {

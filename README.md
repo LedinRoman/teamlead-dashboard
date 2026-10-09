@@ -8,12 +8,7 @@ No account. No hosted service. Fork it, point it at your board, change the statu
 
 ![Tour of Team Overview, Flow, Predictability and Quality](docs/screenshots/tour.gif)
 
-The board in the pictures is fictional.
-
-![Team Overview](docs/screenshots/overview.png)
-![Flow](docs/screenshots/flow.png)
-![Predictability](docs/screenshots/predictability.png)
-![Quality](docs/screenshots/quality.png)
+The board in the picture is fictional.
 
 ## Quick start
 
@@ -65,20 +60,6 @@ docker compose up --build
 The UI is on http://localhost:3000. Data lives in two Docker volumes: Postgres, and the app data directory that holds the encryption key.
 
 Change `DB_PASSWORD` before you expose this past your own machine. The compose file binds to `127.0.0.1`.
-
-## What this is not
-
-- Not a multi-tenant SaaS. Anyone who can open the server can see the dashboard.
-- Not DORA, and not a ranking of people.
-- It does not invent missing status transitions. If Jira has no changelog entry, the number stays empty.
-
-## Development
-
-```bash
-npm test
-```
-
-That is the typecheck plus the metric fixtures. No Jira credentials required.
 
 ## License
 

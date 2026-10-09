@@ -128,13 +128,13 @@ check('task without a start is not aging', classifyFlowIssue(backlog, workflow).
 
 console.log('--- aging ---');
 const ages = flowAgingAges(dev, workflow, now);
-check('active episode label', ages.episodeLabel, 'В работе');
+check('active episode label', ages.episodeLabel, 'In progress');
 check('status age uses statusEnteredAt when present', flowAgingAges(issue({
   ...dev,
   statusEnteredAt: '2026-09-14T12:00:00.000Z',
 }), workflow, now).statusDays, 1);
 const reworkAges = flowAgingAges(returned, workflow, now);
-check('returned episode label', reworkAges.episodeLabel, 'В работе');
+check('returned episode label', reworkAges.episodeLabel, 'In progress');
 check('returned episode starts after first review', reworkAges.episodeDays, 3.1);
 check('original cycle time stays on the row', reworkAges.originalCycleTimeDays, 2);
 
@@ -368,8 +368,8 @@ const burstWork = burstTimeline.filter((row) => row.status === 'В работе'
 const burstTotal = issueTimelineStatusTotals(burstTimeline).find((row) => row.status === 'В работе');
 check('three short in-progress visits', burstWork.length, 3);
 check('short visit is not rounded to 0 days', burstWork.every((row) => row.days > 0), true);
-check('short visit formats as 0.x hours', formatCycleDuration(burstWork[0].days), '0.3 ч');
-check('short visit totals keep the hour', formatCycleDuration(burstTotal?.days ?? 0), '1 ч');
+check('short visit formats as 0.x hours', formatCycleDuration(burstWork[0].days), '0.3 h');
+check('short visit totals keep the hour', formatCycleDuration(burstTotal?.days ?? 0), '1 h');
 check('short visit totals count visits', burstTotal?.visits, 3);
 check(
   'Fix color is not В работе color',
@@ -473,7 +473,7 @@ check(
 const fs = require('node:fs');
 const path = require('node:path');
 const agingTable = fs.readFileSync(path.join(__dirname, '../src/frontend/components/flow/FlowAgingTable.tsx'), 'utf8');
-check('aging shows execution time for review/done', agingTable.includes('время выполнения'), true);
+check('aging shows execution time for review/done', agingTable.includes('cycle time −'), true);
 check('aging colors by agingAttention, not rework', agingTable.includes('agingAttention(row, thresholds)'), true);
 check('aging has no rework-only checkbox', agingTable.includes('Только Rework'), false);
 check('aging has no Rework badge', agingTable.includes('Rework'), false);

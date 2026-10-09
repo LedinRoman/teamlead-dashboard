@@ -14,7 +14,7 @@ export function QualityCards({
   onFilter: (filter: QualityTableFilter) => void;
 }) {
   const rateLabel =
-    snapshot.rate === null ? 'Нет данных' : `${Math.round(snapshot.rate * 100)}%`;
+    snapshot.rate === null ? 'No data' : `${Math.round(snapshot.rate * 100)}%`;
   const median = snapshot.reworkSummary?.median;
   const p85 = snapshot.reworkSummary?.p85;
   const cycleN = snapshot.reworkSummary?.count ?? 0;
@@ -31,10 +31,10 @@ export function QualityCards({
         </span>
         <span className="stat-value">{rateLabel}</span>
         <span className="stat-hint">
-          {snapshot.n === 0 ? 'нет когорты' : `${snapshot.r} из ${snapshot.n} задач`}
+          {snapshot.n === 0 ? 'no cohort' : `${snapshot.r} of ${snapshot.n} issues`}
         </span>
         {snapshot.nUnknown > 0 && (
-          <span className="stat-hint">ещё {snapshot.nUnknown} с неполной историей</span>
+          <span className="stat-hint">{snapshot.nUnknown} more with incomplete history</span>
         )}
       </button>
       <button
@@ -47,15 +47,15 @@ export function QualityCards({
           <Hint text={QUALITY_HINTS.fpy}>First Pass Yield</Hint>
         </span>
         <span className="stat-value">
-          {snapshot.firstPass.fpy === null ? 'Нет данных' : `${Math.round(snapshot.firstPass.fpy * 100)}%`}
+          {snapshot.firstPass.fpy === null ? 'No data' : `${Math.round(snapshot.firstPass.fpy * 100)}%`}
         </span>
         <span className="stat-hint">
           {snapshot.firstPass.passed + snapshot.firstPass.failed === 0
-            ? 'нет завершённого первого прохода'
-            : `${snapshot.firstPass.passed} без возврата до Готово · ${snapshot.firstPass.failed} с возвратом`}
+            ? 'no finished first pass'
+            : `${snapshot.firstPass.passed} reached Done without a return · ${snapshot.firstPass.failed} returned`}
         </span>
         {snapshot.firstPass.pending > 0 && (
-          <span className="stat-hint">{snapshot.firstPass.pending} ещё без исхода, не в FPY</span>
+          <span className="stat-hint">{snapshot.firstPass.pending} still open, not in FPY</span>
         )}
       </button>
       <button
@@ -69,7 +69,7 @@ export function QualityCards({
         </span>
         <span className="stat-value">{snapshot.loops}</span>
         <span className="stat-hint">
-          завершённых циклов · {snapshot.r} {taskWord(snapshot.r)} с возвратом
+          completed cycles · {snapshot.r} {taskWord(snapshot.r)} returned
         </span>
       </button>
       <button
@@ -83,7 +83,7 @@ export function QualityCards({
         </span>
         <span className="stat-value">{snapshot.r2}</span>
         <span className="stat-hint">
-          {taskWord(snapshot.r2)} с двумя и более возвратами
+          {taskWord(snapshot.r2)} with two or more returns
         </span>
       </button>
       <button
@@ -96,23 +96,19 @@ export function QualityCards({
           <Hint text={QUALITY_HINTS.reworkTime}>Rework Time</Hint>
         </span>
         <span className="stat-value">
-          {median === undefined ? 'Нет данных' : formatCycleDuration(median)}
+          {median === undefined ? 'No data' : formatCycleDuration(median)}
         </span>
         <span className="stat-hint">
           {cycleN === 0
-            ? 'нет завершённых циклов'
+            ? 'no completed cycles'
             : `median · P85 ${p85 === undefined ? '—' : formatCycleDuration(p85)} · n=${cycleN}`}
         </span>
-        <span className="stat-hint">открытых циклов: {snapshot.reworkWip}</span>
+        <span className="stat-hint">open cycles: {snapshot.reworkWip}</span>
       </button>
     </div>
   );
 }
 
 function taskWord(count: number): string {
-  const n10 = count % 10;
-  const n100 = count % 100;
-  if (n10 === 1 && n100 !== 11) return 'задача';
-  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'задачи';
-  return 'задач';
+  return count === 1 ? 'issue' : 'issues';
 }

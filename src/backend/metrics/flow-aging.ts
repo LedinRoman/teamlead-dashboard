@@ -7,7 +7,7 @@ export type FlowEpisodeKind = 'active' | 'rework';
 
 export interface FlowAgingAges {
   kind: FlowEpisodeKind;
-  episodeLabel: 'В работе';
+  episodeLabel: 'In progress';
   episodeDays: number;
   statusDays: number;
   /** Episode minus time in the current status. For Проверка, honors doneAt (incl. override). */
@@ -76,7 +76,7 @@ export function flowAgingAges(
 
   return {
     kind: classified.rework ? 'rework' : 'active',
-    episodeLabel: 'В работе',
+    episodeLabel: 'In progress',
     episodeDays,
     statusDays,
     executionDays: Math.max(0, durationDays(episodeStart, executionEnd, working, holidays)),
@@ -115,20 +115,20 @@ export function flowStageLabel(stage: FlowStageId): string {
     case 'rework':
       return 'Development';
     case 'inReview':
-      return 'В проверке';
+      return 'In review';
     case 'qaQueue':
       return 'QA WIP';
     case 'qa':
       return 'QA';
     case 'readyForRelease':
-      return 'Ожидает релиза';
+      return 'Awaiting release';
     case 'notStarted':
-      return 'К выполнению';
+      return 'To do';
     case 'done':
-      return 'Готово';
+      return 'Done';
     case 'cancelled':
-      return 'Отменено';
+      return 'Cancelled';
     default:
-      return 'Другое';
+      return 'Other';
   }
 }

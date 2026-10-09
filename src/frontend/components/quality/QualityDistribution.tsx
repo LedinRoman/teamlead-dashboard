@@ -32,7 +32,7 @@ export function QualityDistribution({
     <SegmentBar
       selected={filter}
       onSelect={(id) => onFilter(id as QualityTableFilter)}
-      caption="Кликни сегмент, чтобы отфильтровать таблицу. 0 — пока без наблюдаемых возвратов."
+      caption="Click a segment to filter the table. 0 means no return was observed."
       segments={SEGMENTS.map((segment) => ({
         id: segment.id,
         label: segment.label,
@@ -40,10 +40,10 @@ export function QualityDistribution({
         value: values[segment.id] ?? 0,
         title:
           segment.id === 'zero'
-            ? 'Пока без наблюдаемых возвратов.'
+            ? 'No returns observed yet.'
             : segment.id === 'unknown'
               ? QUALITY_HINTS.distribution
-              : `${segment.label} возврат(ов)`,
+              : `${segment.label} return(s)`,
       }))}
     />
   );

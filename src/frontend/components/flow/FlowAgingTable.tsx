@@ -48,16 +48,16 @@ export function FlowAgingTable({
 
   if (flow.aging.length === 0) {
     if (flow.agingSprints && flow.agingSprints.length === 0) {
-      return <p className="caption">Нет активного спринта на досках выбранных команд — Aging WIP пуст.</p>;
+      return <p className="caption">No active sprint on the selected boards, so aging WIP is empty.</p>;
     }
-    return <p className="caption">В активном спринте нет задач в Aging по выбранному правилу эпизода.</p>;
+    return <p className="caption">The active sprint has no issues in aging for the selected episode rule.</p>;
   }
 
   return (
     <div className="stack" style={{ gap: 8 }}>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <select className="cycle-def-select" value={assignee} onChange={(event) => setAssignee(event.target.value)}>
-          <option value="">Все исполнители</option>
+          <option value="">All assignees</option>
           {people.map(([id, name]) => (
             <option key={id} value={id}>
               {name}
@@ -70,34 +70,34 @@ export function FlowAgingTable({
             value={olderThan}
             onChange={(event) => setOlderThan(event.target.value as 'median' | 'p85' | '')}
           >
-            <option value="">Любой возраст</option>
-            <option value="median">Старше Median ({formatCycleDuration(flow.thresholds.median)})</option>
-            <option value="p85">Старше P85 ({formatCycleDuration(flow.thresholds.p85)})</option>
+            <option value="">Any age</option>
+            <option value="median">Older than median ({formatCycleDuration(flow.thresholds.median)})</option>
+            <option value="p85">Older than P85 ({formatCycleDuration(flow.thresholds.p85)})</option>
           </select>
         ) : (
-          <span className="caption">Пороги Median/P85 скрыты: мало завершённых задач (n&lt;5).</span>
+          <span className="caption">Median/P85 thresholds are hidden: too few completed issues (n&lt;5).</span>
         )}
         {stageFilter && (
           <button type="button" className="cycle-exclude-restore" onClick={onClearStage}>
-            сбросить фильтр стадии
+            clear stage filter
           </button>
         )}
       </div>
       {rows.length === 0 ? (
-        <p className="caption">Нет задач по выбранному фильтру.</p>
+        <p className="caption">No issues match the selected filter.</p>
       ) : (
         <div className="flow-table-wrap">
           <table className="flow-aging">
             <thead>
               <tr>
-                <th>Ключ</th>
-                <th>Название</th>
-                <th>Стадия</th>
-                <th>Статус</th>
-                <th>Исполнитель</th>
+                <th>Key</th>
+                <th>Summary</th>
+                <th>Stage</th>
+                <th>Status</th>
+                <th>Assignee</th>
                 <th>SP</th>
-                <th>Эпизод</th>
-                <th>В текущем статусе</th>
+                <th>Episode</th>
+                <th>In current status</th>
                 <th></th>
               </tr>
             </thead>
@@ -153,7 +153,7 @@ function AgingRow({
         <td>
           {row.ages.episodeLabel}: {formatCycleDuration(row.ages.episodeDays)}
           {isAgingCompletedStatus(row.stage) && (
-            <> (время выполнения - {formatCycleDuration(row.ages.executionDays)})</>
+            <> (cycle time − {formatCycleDuration(row.ages.executionDays)})</>
           )}
           {row.blocked && <span className="flow-badge">Blocked</span>}
         </td>
@@ -162,11 +162,11 @@ function AgingRow({
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             {onOpenTimeline && (
               <button type="button" className="cycle-exclude-restore" onClick={() => onOpenTimeline(row.key)}>
-                линия
+                timeline
               </button>
             )}
             <button type="button" className="cycle-exclude-restore" onClick={onToggle}>
-              {open ? 'скрыть' : 'детали'}
+              {open ? 'hide' : 'details'}
             </button>
           </div>
         </td>
@@ -175,13 +175,13 @@ function AgingRow({
         <tr className="flow-aging-detail">
           <td colSpan={9}>
             <p className="caption">
-              Начало эпизода: {formatStamp(row.ages.episodeStartedAt)} · Вход в статус:{' '}
+              Episode start: {formatStamp(row.ages.episodeStartedAt)} · Entered status:{' '}
               {formatStamp(row.ages.statusEnteredAt)}
-              {row.doneAt ? ` · Первая проверка: ${formatStamp(row.doneAt)}` : ''}
+              {row.doneAt ? ` · First review: ${formatStamp(row.doneAt)}` : ''}
               {row.ages.originalCycleTimeDays !== undefined
-                ? ` · Исходный Cycle Time: ${formatCycleDuration(row.ages.originalCycleTimeDays)}`
+                ? ` · Original cycle time: ${formatCycleDuration(row.ages.originalCycleTimeDays)}`
                 : ''}
-              {row.firstInProgress ? ` · Первый старт: ${formatStamp(row.firstInProgress)}` : ''}
+              {row.firstInProgress ? ` · First start: ${formatStamp(row.firstInProgress)}` : ''}
             </p>
           </td>
         </tr>

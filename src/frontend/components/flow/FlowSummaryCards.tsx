@@ -13,17 +13,17 @@ export function FlowSummaryCards({
       <button
         type="button"
         className="stat flow-stat"
-        title="Задачи, которые сейчас требуют работы разработчиков: разработка и ревью. Не Проверка и не очередь QA."
+        title="Issues that need a developer right now: development and review. Not In review, and not the QA queue."
         onClick={() => onSelect('developmentWip')}
       >
         <span className="stat-label">Development WIP</span>
         <span className="stat-value">{flow.developmentWip}</span>
-        <span className="stat-hint">Сейчас требует работы разработчиков</span>
+        <span className="stat-hint">Needs a developer right now</span>
       </button>
       <button
         type="button"
         className="stat flow-stat"
-        title="Очередь и работа QA до перехода в Проверку или Fix. Сама Проверка сюда не входит."
+        title="QA queue and QA work before In review or Fix. In review itself is not included."
         onClick={() => onSelect('qaWip')}
         disabled={!flow.qaWipAvailable}
       >
@@ -31,34 +31,34 @@ export function FlowSummaryCards({
         <span className="stat-value">{flow.qaWipAvailable ? flow.qaWip : '—'}</span>
         <span className="stat-hint">
           {flow.qaWipAvailable
-            ? 'В очереди QA, пока не уйдёт в Проверку или Fix'
-            : flow.qaUnavailableReason ?? 'QA WIP недоступен'}
+            ? 'In the QA queue, until In review or Fix'
+            : flow.qaUnavailableReason ?? 'QA WIP unavailable'}
         </span>
       </button>
       <button
         type="button"
         className="stat flow-stat"
-        title="Текущий статус Проверка. Это не обязательно активное тестирование и не конец Cycle Time для Aging."
+        title="Current status is In review. That is not necessarily active testing, and it is not the end of cycle time for aging."
         onClick={() => onSelect('inReview')}
       >
-        <span className="stat-label">В проверке</span>
+        <span className="stat-label">In review</span>
         <span className="stat-value">{flow.inReview}</span>
-        <span className="stat-hint">Текущий статус, не обязательно активное тестирование</span>
+        <span className="stat-hint">Current status, not necessarily active testing</span>
       </button>
       <button
         type="button"
         className="stat flow-stat"
-        title="Активные задачи в blocked-статусе или с blocked-меткой, которые ещё в Development WIP, ревью или QA."
+        title="Active issues in a blocked status or with a blocked label, still in development, review, or QA."
         onClick={() => onSelect('blocked')}
       >
         <span className="stat-label">Blocked</span>
         <span className="stat-value">{flow.blocked}</span>
-        <span className="stat-hint">Активные заблокированные задачи</span>
+        <span className="stat-hint">Active blocked issues</span>
       </button>
       <button
         type="button"
         className="stat flow-stat"
-        title="Самая старая активная задача по возрасту текущего эпизода (не с даты создания ключа)."
+        title="Oldest active issue by the current episode, not by when the key was created."
         onClick={() => onSelect('oldest')}
         disabled={!flow.oldest}
       >
@@ -69,7 +69,7 @@ export function FlowSummaryCards({
         <span className="stat-hint">
           {flow.oldest
             ? `${flow.oldest.episodeLabel}: ${formatCycleDuration(flow.oldest.episodeDays)}`
-            : 'Самая старая активная задача'}
+            : 'Oldest active issue'}
         </span>
       </button>
     </div>

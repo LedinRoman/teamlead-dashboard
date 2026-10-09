@@ -12,7 +12,7 @@ import {
 import { sortTransitions, statusAt } from './flow-timeline';
 import { daysBetween, elapsedDays, parseDate, workingDaysBetween, workingElapsedDays } from './time';
 
-export const CYCLE_EMPTY_MESSAGE = 'В выбранном спринте пока нет задач, переданных на проверку';
+export const CYCLE_EMPTY_MESSAGE = 'No issues in this sprint have been handed to review yet';
 /** Cycle Time counts only these work types. Everything else is ignored. */
 export const ALLOWED_CYCLE_TYPES = [
   'bug',
@@ -402,87 +402,87 @@ export function cycleSummaryCards(options: {
   const qaWaitCount = options.qaWaitCount ?? 0;
   const splits = (withoutQa: number | null, qa: number | null): CycleSummarySplit[] => [
     {
-      label: 'без QA',
+      label: 'without QA',
       value: formatCycleMetric(withoutQa),
-      hint: 'Разработка и прочие статусы, без Ready to QA',
+      hint: 'Development and other statuses, excluding Ready to QA',
     },
     {
       label: 'QA',
       value: formatCycleMetric(qa),
       hint:
         qa === null
-          ? 'Время в Ready to QA до первой Проверки'
+          ? 'Time in Ready to QA before the first review'
           : qaWaitCount > 0
-            ? `Среди задач с очередью Ready to QA (${qaWaitCount})`
-            : 'Никто не ждал в Ready to QA',
+            ? `Issues that waited in Ready to QA (${qaWaitCount})`
+            : 'Nobody waited in Ready to QA',
     },
   ];
   return [
     {
       label: 'Median CT',
       value: formatCycleMetric(options.median),
-      hint: 'Полный цикл, включая очередь QA',
+      hint: 'Full cycle, including the QA queue',
       splits: splits(options.medianWithoutQa, options.medianQa),
     },
     {
       label: 'P85 CT',
       value: formatCycleMetric(options.p85),
-      hint: '85% задач завершены быстрее',
+      hint: '85% of issues finished faster',
       splits: splits(options.p85WithoutQa, options.p85Qa),
     },
     {
-      label: 'Завершено',
+      label: 'Done',
       value: String(options.completedCount),
-      hint: `${options.completedInReview} в проверке · ${options.completedReleased} в готово`,
+      hint: `${options.completedInReview} in review · ${options.completedReleased} released`,
     },
     {
       label: 'WIP',
       value: String(options.wipCount),
-      hint: `${options.devWipCount} в разработке · ${options.qaWipCount} QA · ${options.todoCount} к выполнению`,
+      hint: `${options.devWipCount} in development · ${options.qaWipCount} in QA · ${options.todoCount} to do`,
     },
   ];
 }
 
 function formatCycleMetric(value: number | null): string {
-  return value === null ? 'Нет данных' : formatCycleDuration(value);
+  return value === null ? 'No data' : formatCycleDuration(value);
 }
 
 export function cycleBarTooltip(bar: CycleBar, endStatus = ENGINEERING_DONE_STATUS): string {
   const lines = [
     bar.storyPoints === undefined ? bar.key : `${bar.key} · ${formatStoryPoints(bar.storyPoints)}`,
     bar.summary,
-    `Исполнитель: ${bar.assigneeName}`,
-    `В работу: ${formatStamp(bar.firstInProgress)}`,
+    `Assignee: ${bar.assigneeName}`,
+    `Started: ${formatStamp(bar.firstInProgress)}`,
   ];
   if (bar.startOverridden) {
-    lines.push(`Исходный старт: ${formatStamp(bar.changelogStart)}`);
-    lines.push('Override старта');
+    lines.push(`Original start: ${formatStamp(bar.changelogStart)}`);
+    lines.push('Start override');
   }
   lines.push(`${endStatus}: ${formatStamp(bar.doneAt)}`);
   if (bar.endOverridden) {
-    lines.push(`Исходный конец: ${formatStamp(bar.changelogDone)}`);
-    lines.push('Override конца');
+    lines.push(`Original end: ${formatStamp(bar.changelogDone)}`);
+    lines.push('End override');
   }
   lines.push(`Cycle time: ${formatCycleDuration(bar.cycleTimeDays)}`);
-  lines.push(`Разработка: ${formatCycleDuration(bar.devDays)}`);
+  lines.push(`Development: ${formatCycleDuration(bar.devDays)}`);
   lines.push(`QA WIP: ${formatCycleDuration(bar.qaWipDays)}`);
   return lines.join('\n');
 }
 
 function emptyMessage(endStatus: string): string {
   if (endStatus === ENGINEERING_DONE_STATUS) return CYCLE_EMPTY_MESSAGE;
-  return `В выбранном спринте пока нет задач, достигших статуса «${endStatus}»`;
+  return `No issues in this sprint have reached “${endStatus}” yet`;
 }
 
 /** Display-only. Callers keep the exact day values for medians and bar lengths. */
 export function formatCycleDuration(days: number): string {
-  if (!(days > 0)) return '0 ч';
+  if (!(days > 0)) return '0 h';
   if (days < 1) {
     const hours = Math.round(days * 24 * 10) / 10;
-    return `${formatShown(hours === 0 ? 0.1 : hours)} ч`;
+    return `${formatShown(hours === 0 ? 0.1 : hours)} h`;
   }
   const shown = Math.round(days * 10) / 10;
-  return `${formatShown(shown)} ${dayWord(shown)}`;
+  return `${formatShown(shown)} ${shown === 1 ? 'day' : 'days'}`;
 }
 
 export function formatStoryPoints(value: number): string {
@@ -586,12 +586,3 @@ function formatShown(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function dayWord(value: number): string {
-  if (!Number.isInteger(value)) return 'дня';
-  const n = Math.abs(Math.round(value)) % 100;
-  const d = n % 10;
-  if (n > 10 && n < 20) return 'дней';
-  if (d === 1) return 'день';
-  if (d >= 2 && d <= 4) return 'дня';
-  return 'дней';
-}

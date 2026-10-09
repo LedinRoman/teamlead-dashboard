@@ -193,9 +193,9 @@ const expectedSummary = summarize(completed.map((item) => item.cycleTimeDays));
 
 console.log('--- 1. summary cards ---');
 check(
-  'cards are Median CT, P85 CT, Завершено, WIP',
+  'cards are Median CT, P85 CT, Done, WIP',
   model.cards.map((card) => card.label),
-  ['Median CT', 'P85 CT', 'Завершено', 'WIP'],
+  ['Median CT', 'P85 CT', 'Done', 'WIP'],
 );
 check('Median uses summarize()', model.median, expectedSummary.median);
 check('P85 uses summarize()', model.p85, expectedSummary.p85);
@@ -207,19 +207,19 @@ check('Median card value is formatted, not raw', model.cards[0].value, formatCyc
 check('P85 card value is formatted', model.cards[1].value, formatCycleDuration(expectedSummary.p85));
 check('Завершено card', model.cards[2].value, '3');
 check('WIP card', model.cards[3].value, '2');
-check('Median hint is the full cycle', model.cards[0].hint, 'Полный цикл, включая очередь QA');
-check('P85 hint', model.cards[1].hint, '85% задач завершены быстрее');
-check('Завершено hint splits review and done', model.cards[2].hint, '3 в проверке · 0 в готово');
-check('WIP hint splits development, QA, and todo', model.cards[3].hint, '1 в разработке · 1 QA · 1 к выполнению');
+check('Median hint is the full cycle', model.cards[0].hint, 'Full cycle, including the QA queue');
+check('P85 hint', model.cards[1].hint, '85% of issues finished faster');
+check('Done hint splits review and released', model.cards[2].hint, '3 in review · 0 released');
+check('WIP hint splits development, QA, and todo', model.cards[3].hint, '1 in development · 1 in QA · 1 to do');
 check(
-  'Median card nests без QA and QA',
+  'Median card nests without QA and QA',
   model.cards[0].splits.map((split) => split.label),
-  ['без QA', 'QA'],
+  ['without QA', 'QA'],
 );
 check(
-  'P85 card nests без QA and QA',
+  'P85 card nests without QA and QA',
   model.cards[1].splits.map((split) => split.label),
-  ['без QA', 'QA'],
+  ['without QA', 'QA'],
 );
 check('todo is counted beside WIP, not inside it', model.todoCount, 1);
 const extraWip = buildCycleOverview(
@@ -267,7 +267,7 @@ check('tooltip includes assignee', tip.includes('Bob'), true);
 check('tooltip includes start', tip.includes('2026-09-07 09:00'), true);
 check('tooltip includes Проверка timestamp', tip.includes('2026-09-11 12:00'), true);
 check('tooltip includes cycle time', tip.includes(formatCycleDuration(4.8)), true);
-check('tooltip includes developer time', tip.includes('Разработка:'), true);
+check('tooltip includes developer time', tip.includes('Development:'), true);
 check('tooltip includes QA WIP time', tip.includes('QA WIP:'), true);
 check('tooltip includes story points', tip.includes('5 SP'), true);
 
@@ -354,33 +354,33 @@ const released = issue({
 const split = buildCycleOverview([...completed, released], window);
 check('Завершено in Проверка', split.completedInReview, 3);
 check('Завершено in Готово', split.completedReleased, 1);
-check('Завершено hint names both statuses', split.cards[2].hint, '3 в проверке · 1 в готово');
+check('Done hint names both statuses', split.cards[2].hint, '3 in review · 1 released');
 
 console.log('--- 8. empty completed state ---');
 const empty = buildCycleOverview([wip, notStarted], window);
 check('empty median is null, not 0', empty.median, null);
 check('empty p85 is null, not 0', empty.p85, null);
-check('empty Median card', empty.cards[0].value, 'Нет данных');
-check('empty Median без QA nested', empty.cards[0].splits[0].value, 'Нет данных');
-check('empty Median QA nested', empty.cards[0].splits[1].value, 'Нет данных');
-check('empty P85 card', empty.cards[1].value, 'Нет данных');
+check('empty Median card', empty.cards[0].value, 'No data');
+check('empty Median without QA nested', empty.cards[0].splits[0].value, 'No data');
+check('empty Median QA nested', empty.cards[0].splits[1].value, 'No data');
+check('empty P85 card', empty.cards[1].value, 'No data');
 check('empty completed count is 0', empty.cards[2].value, '0');
-check('empty Завершено split is zeros', empty.cards[2].hint, '0 в проверке · 0 в готово');
+check('empty Done split is zeros', empty.cards[2].hint, '0 in review · 0 released');
 check('empty WIP still counted', empty.cards[3].value, '1');
-check('empty WIP is development only', empty.cards[3].hint, '1 в разработке · 0 QA · 1 к выполнению');
+check('empty WIP is development only', empty.cards[3].hint, '1 in development · 0 in QA · 1 to do');
 check('empty message', empty.emptyMessage, CYCLE_EMPTY_MESSAGE);
 check('empty has no bars', empty.bars.length, 0);
-check('Нет данных is not 0 дней', empty.cards[0].value.includes('0') && empty.cards[0].label === 'Median CT', false);
+check('No data is not 0 days', empty.cards[0].value.includes('0') && empty.cards[0].label === 'Median CT', false);
 
 console.log('--- 9. sub-day values render as hours ---');
-check('0.25 days → 6 ч', formatCycleDuration(0.25), '6 ч');
-check('0.1 days → 2.4 ч', formatCycleDuration(0.1), '2.4 ч');
-check('20 minutes → 0.3 ч', formatCycleDuration(20 / 60 / 24), '0.3 ч');
-check('37 minutes → 0.6 ч', formatCycleDuration(37 / 60 / 24), '0.6 ч');
-check('true zero stays 0 ч', formatCycleDuration(0), '0 ч');
-check('1 day → 1 день', formatCycleDuration(1), '1 день');
-check('1.8 days → 1.8 дня', formatCycleDuration(1.8), '1.8 дня');
-check('5 days → 5 дней', formatCycleDuration(5), '5 дней');
+check('0.25 days → 6 h', formatCycleDuration(0.25), '6 h');
+check('0.1 days → 2.4 h', formatCycleDuration(0.1), '2.4 h');
+check('20 minutes → 0.3 h', formatCycleDuration(20 / 60 / 24), '0.3 h');
+check('37 minutes → 0.6 h', formatCycleDuration(37 / 60 / 24), '0.6 h');
+check('true zero stays 0 h', formatCycleDuration(0), '0 h');
+check('1 day → 1 day', formatCycleDuration(1), '1 day');
+check('1.8 days → 1.8 days', formatCycleDuration(1.8), '1.8 days');
+check('5 days → 5 days', formatCycleDuration(5), '5 days');
 
 console.log('--- 10. Days / Weeks grouping is gone ---');
 const overview = fs.readFileSync(path.join(__dirname, '../src/app/overview/page.tsx'), 'utf8');
@@ -389,7 +389,7 @@ check('overview no longer builds a daily series', overview.includes('cycleSeries
 check('overview does not label axes Day / Median days', /xLabel=\{grain|yLabel="Median days"/.test(overview), false);
 check('overview uses per-issue bars', overview.includes('CycleTimeBarChart'), true);
 check('overview loads status timeline for QA split', overview.includes('withTimeline: true'), true);
-check('overview shows Median без QA', overview.includes('без QA') && overview.includes('medianWithoutQa'), true);
+check('overview shows Median without QA', overview.includes('without QA') && overview.includes('medianWithoutQa'), true);
 check('overview nests QA splits under Median CT and P85 CT', overview.includes('stat-splits') && overview.includes('Median CT') && overview.includes('P85 CT'), true);
 check('overview has start/end status dropdowns', overview.includes('первый переход в') && overview.includes('StatusSelect'), true);
 check('overview does not keep the old static caption', overview.includes('Готово не учитывается'), false);
@@ -582,7 +582,7 @@ check('Median QA ignores issues that skipped the queue', mixedQa.medianQa, 1);
 check(
   'Median QA hint counts queued issues',
   mixedQa.cards[0].splits[1].hint,
-  'Среди задач с очередью Ready to QA (1)',
+  'Issues that waited in Ready to QA (1)',
 );
 check('P85 QA uses the queued distribution', mixedQa.p85Qa, 1);
 check('chart legend names the two slices', charts.includes('cycle-chart-legend') && charts.includes('QA WIP'), true);
@@ -866,8 +866,8 @@ check(
   { 'CDR-2038': '2026-09-10T12:00:00.000Z' },
 );
 const overrideTip = cycleBarTooltip(slow);
-check('tooltip names the override', overrideTip.includes('Override старта'), true);
-check('tooltip keeps the original start', overrideTip.includes('Исходный старт'), true);
+check('tooltip names the override', overrideTip.includes('Start override'), true);
+check('tooltip keeps the original start', overrideTip.includes('Original start'), true);
 check('overview has an override dialog', overview.includes('OverrideDialog') && overview.includes('Override дат'), true);
 check('chart can prefill an override key', charts.includes('onOverrideStart'), true);
 check('compare uses the same start overrides', overview.includes('startOverrides: overrideMaps.startOverrides'), true);
@@ -906,8 +906,8 @@ check(
   true,
 );
 const endTip = cycleBarTooltip(endBar);
-check('tooltip names the end override', endTip.includes('Override конца'), true);
-check('tooltip keeps the original end', endTip.includes('Исходный конец'), true);
+check('tooltip names the end override', endTip.includes('End override'), true);
+check('tooltip keeps the original end', endTip.includes('Original end'), true);
 check(
   'override maps split start and end',
   cycleOverrideMaps([{ key: 'cdr-1', startedAt: 'a', endedAt: 'b' }]),
@@ -932,7 +932,7 @@ const shortCycle = issue({
 });
 const shortModel = buildCycleOverview([shortCycle], { from: '2026-09-16', to: '2026-09-16' });
 check('37-minute cycle is not stored as 0 days', shortModel.bars[0].cycleTimeDays > 0, true);
-check('37-minute cycle formats as 0.6 ч', formatCycleDuration(shortModel.bars[0].cycleTimeDays), '0.6 ч');
+check('37-minute cycle formats as 0.6 h', formatCycleDuration(shortModel.bars[0].cycleTimeDays), '0.6 h');
 
 check('calendar Fri 18:00 → Mon 10:00', daysBetween(fri, mon), 2.7);
 check('working Fri 18:00 → Mon 10:00 skips weekend', workingDaysBetween(fri, mon), 0.7);

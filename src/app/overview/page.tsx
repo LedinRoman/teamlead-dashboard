@@ -879,11 +879,11 @@ function CycleTimeSection({
                     {card.splits.map((split) => {
                       const splitCompared =
                         card.label === 'Median CT'
-                          ? split.label === 'без QA'
+                          ? split.label === 'without QA'
                             ? medianDevCompare
                             : medianQaCompare
                           : card.label === 'P85 CT'
-                            ? split.label === 'без QA'
+                            ? split.label === 'without QA'
                               ? p85DevCompare
                               : p85QaCompare
                             : undefined;

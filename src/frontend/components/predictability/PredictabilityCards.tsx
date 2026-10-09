@@ -5,27 +5,27 @@ import type { PredictabilitySnapshot } from '@backend/metrics/predictability-mod
 
 export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnapshot }) {
   const { summary, incomplete } = snapshot;
-  const reliabilityTitle = incomplete ? 'Выполнено на текущий момент' : 'Commitment reliability';
+  const reliabilityTitle = incomplete ? 'Done so far' : 'Commitment reliability';
   return (
     <div className="stat-bar predictability-stats">
       <div className="stat" title={METRIC_HINTS.reliability}>
         <span className="stat-label">
-          <Hint text={incomplete ? `${METRIC_HINTS.reliability} Пока спринт открыт, это текущий прогресс, не итог.` : METRIC_HINTS.reliability}>
+          <Hint text={incomplete ? `${METRIC_HINTS.reliability} While the sprint is open, this is progress so far, not a final score.` : METRIC_HINTS.reliability}>
             {reliabilityTitle}
           </Hint>
         </span>
         <span className="stat-value">{formatPct(summary.reliability.taskPercent)}</span>
         <span className="stat-hint">
           {summary.reliability.committedTasks === 0
-            ? 'Нет данных'
-            : `${summary.reliability.completedTasks} из ${summary.reliability.committedTasks} задач`}
+            ? 'No data'
+            : `${summary.reliability.completedTasks} of ${summary.reliability.committedTasks} issues`}
         </span>
         <span className="stat-hint" title={METRIC_HINTS.reliabilitySp}>
           {summary.reliability.committedSp === 0 && summary.reliability.unestimated > 0
-            ? 'SP недоступны — часть задач без оценки'
+            ? 'Story points unavailable — some issues are unestimated'
             : summary.reliability.committedSp === 0
               ? ''
-              : `${fmtSp(summary.reliability.completedSp)} из ${fmtSp(summary.reliability.committedSp)}`}
+              : `${fmtSp(summary.reliability.completedSp)} of ${fmtSp(summary.reliability.committedSp)}`}
         </span>
       </div>
       <div className="stat" title={METRIC_HINTS.scopeAdded}>
@@ -41,7 +41,7 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
           {summary.added.tasks} {taskWord(summary.added.tasks)} · {fmtSp(summary.added.storyPoints)}
         </span>
         <span className="stat-hint">
-          завершено {summary.added.completedTasks} {taskWord(summary.added.completedTasks)}
+          {summary.added.completedTasks} {taskWord(summary.added.completedTasks)} completed
         </span>
       </div>
       <div className="stat" title={METRIC_HINTS.scopeDrop}>
@@ -56,7 +56,7 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
         <span className="stat-hint">
           {summary.removed.tasks} {taskWord(summary.removed.tasks)} · {fmtSp(summary.removed.storyPoints)}
         </span>
-        <span className="stat-hint">снято с commitment</span>
+        <span className="stat-hint">removed from commitment</span>
       </div>
       <div className="stat" title={METRIC_HINTS.spillover}>
         <span className="stat-label">
@@ -77,8 +77,8 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
         </span>
         <span className="stat-hint">
           {summary.unplanned.percentOfCommitment === null
-            ? 'нет выполненного объёма'
-            : `${Math.round(summary.unplanned.percentOfCommitment)}% от выполненного`}
+            ? 'no completed work yet'
+            : `${Math.round(summary.unplanned.percentOfCommitment)}% of completed`}
         </span>
       </div>
     </div>
@@ -86,7 +86,7 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
 }
 
 function formatPct(value: number | null): string {
-  if (value === null) return 'Нет данных';
+  if (value === null) return 'No data';
   return `${Math.round(value)}%`;
 }
 
@@ -104,9 +104,5 @@ function fmtSp(value: number): string {
 }
 
 function taskWord(count: number): string {
-  const n10 = count % 10;
-  const n100 = count % 100;
-  if (n10 === 1 && n100 !== 11) return 'задача';
-  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'задачи';
-  return 'задач';
+  return count === 1 ? 'issue' : 'issues';
 }

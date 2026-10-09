@@ -20,7 +20,7 @@ const LABELS: Record<PredictabilityCategory, string> = {
   cancelled: 'Cancelled',
   'added-completed': 'Added completed',
   'added-unfinished': 'Added unfinished',
-  'already-done': 'Завершена до старта',
+  'already-done': 'Done before start',
   excluded: 'Excluded',
 };
 
@@ -66,9 +66,9 @@ export function PredictabilityTaskTable({
     <div className="stack" style={{ gap: 8 }}>
       <div className="row">
         <label className="cycle-filter">
-          <span className="caption">Тип</span>
+          <span className="caption">Type</span>
           <select className="cycle-def-select" value={type} onChange={(event) => setType(event.target.value)}>
-            <option value="">Все</option>
+            <option value="">All</option>
             {types.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -77,25 +77,25 @@ export function PredictabilityTaskTable({
           </select>
         </label>
         <label className="cycle-filter">
-          <span className="caption">Оценка</span>
+          <span className="caption">Estimate</span>
           <select
             className="cycle-def-select"
             value={estimate}
             onChange={(event) => setEstimate(event.target.value as typeof estimate)}
           >
-            <option value="all">Все</option>
-            <option value="estimated">Оценены</option>
-            <option value="unestimated">Без SP</option>
+            <option value="all">All</option>
+            <option value="estimated">Estimated</option>
+            <option value="unestimated">No SP</option>
           </select>
         </label>
         <label className="cycle-filter">
-          <span className="caption">Переносы ≥</span>
+          <span className="caption">Carry-overs ≥</span>
           <select
             className="cycle-def-select"
             value={minSpillovers}
             onChange={(event) => setMinSpillovers(Number(event.target.value))}
           >
-            <option value={0}>Любые</option>
+            <option value={0}>Any</option>
             <option value={1}>1</option>
             <option value={2}>2+</option>
           </select>
@@ -106,43 +106,43 @@ export function PredictabilityTaskTable({
             checked={estimateChanged}
             onChange={(event) => setEstimateChanged(event.target.checked)}
           />{' '}
-          оценка менялась
+          estimate changed
         </label>
       </div>
       {rows.length === 0 ? (
-        <p className="caption">Нет задач с выбранными фильтрами.</p>
+        <p className="caption">No issues match the selected filters.</p>
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Ключ</th>
-                <th>Название</th>
-                <th>Тип</th>
+                <th>Key</th>
+                <th>Summary</th>
+                <th>Type</th>
                 <th className="num">
                   <Hint text={METRIC_HINTS.spBaseline}>SP baseline</Hint>
                 </th>
                 <th className="num">
-                  <Hint text={METRIC_HINTS.spNow}>SP сейчас</Hint>
+                  <Hint text={METRIC_HINTS.spNow}>SP now</Hint>
                 </th>
                 <th>
-                  <Hint text="Категория по членству в спринте: на старте / добавлена / снята. Эпики и завершённые до старта скрыты.">
-                    Категория
+                  <Hint text="Category by sprint membership: at the start, added, or removed. Epics and issues done before the start are hidden.">
+                    Category
                   </Hint>
                 </th>
                 <th>
-                  <Hint text={METRIC_HINTS.created}>Создана</Hint>
+                  <Hint text={METRIC_HINTS.created}>Created</Hint>
                 </th>
-                <th>Добавлена</th>
-                <th>Удалена</th>
+                <th>Added</th>
+                <th>Removed</th>
                 <th>
-                  <Hint text="Первый переход в Проверку. Это момент выполнения для Predictability, не статус Готово.">
-                    Проверка
+                  <Hint text="First transition into review. That is the completion moment for predictability, not the Done status.">
+                    Review
                   </Hint>
                 </th>
-                <th>Статус</th>
+                <th>Status</th>
                 <th className="num">
-                  <Hint text={METRIC_HINTS.spillovers}>Переносы</Hint>
+                  <Hint text={METRIC_HINTS.spillovers}>Carry-overs</Hint>
                 </th>
               </tr>
             </thead>
@@ -184,8 +184,8 @@ export function PredictabilityTaskTable({
 function originHint(task: PredictabilityTask): string {
   const category = CATEGORY_HINTS[task.category];
   if (task.category === 'removed' || task.category.startsWith('added')) return category;
-  if (task.createdInSprint) return `${category} Создана уже во время этого спринта.`;
-  return `${category} Старый ключ — carry-over: задача была в этом спринте на старте.`;
+  if (task.createdInSprint) return `${category} Created during this sprint.`;
+  return `${category} Older key carried in: it was already in this sprint at the start.`;
 }
 
 function day(iso?: string): string {
