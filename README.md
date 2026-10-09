@@ -6,6 +6,15 @@ Sprint health, flow, predictability and quality, from the boards you already hav
 
 No account. No hosted service. Fork it, point it at your board, change the status names.
 
+![Tour of Team Overview, Flow, Predictability and Quality](docs/screenshots/tour.gif)
+
+The board in the pictures is fictional.
+
+![Team Overview](docs/screenshots/overview.png)
+![Flow](docs/screenshots/flow.png)
+![Predictability](docs/screenshots/predictability.png)
+![Quality](docs/screenshots/quality.png)
+
 ## Quick start
 
 Node.js 22 or newer.
