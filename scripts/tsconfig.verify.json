@@ -1,0 +1,24 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "outDir": "../.tmp-verify",
+    "rootDir": "..",
+    "baseUrl": "..",
+    "paths": {
+      "@frontend/*": ["src/frontend/*"],
+      "@backend/*": ["src/backend/*"],
+      "@shared/*": ["src/shared/*"]
+    },
+    "plugins": []
+  },
+  "include": [
+    "../src/backend/metrics/**/*.ts",
+    "../src/backend/jira/jql.ts",
+    "../src/shared/types.ts"
+  ]
+}

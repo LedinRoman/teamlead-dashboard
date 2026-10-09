@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_DATABASE:-teamlead}
+    volumes:
+      - teamlead_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-teamlead}"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:80"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_DATABASE: ${DB_DATABASE:-teamlead}
+      DB_CLIENT: postgres
+      PORT: 80
+      HOSTNAME: 0.0.0.0
+      METRICS_DASHBOARD_DATA_DIR: /app/data
+    volumes:
+      - teamlead_appdata:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  teamlead_pgdata:
+  teamlead_appdata:

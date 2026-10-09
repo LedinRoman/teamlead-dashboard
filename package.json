@@ -1,0 +1,41 @@
+{
+  "name": "teamlead-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sprint, flow, predictability and quality for a Jira team. Local first, token stays in your database.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedinRoman/teamlead-dashboard.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "next build",
+    "start": "next start -H localhost",
+    "test": "npm run typecheck && npm run verify",
+    "typecheck": "tsc --noEmit",
+    "verify": "tsc -p scripts/tsconfig.verify.json && node scripts/verify-metrics.cjs && node scripts/verify-cycle-overview.cjs && node scripts/verify-flow.cjs && node scripts/verify-predictability.cjs && node scripts/verify-quality.cjs",
+    "smoke:api": "node scripts/smoke-api.mjs",
+    "check:postgres": "node scripts/check-postgres.mjs",
+    "db:up": "node scripts/start-postgres.mjs",
+    "db:migrate-sqlite": "node scripts/migrate-sqlite-to-pg.mjs",
+    "docker:up": "docker compose up --build"
+  },
+  "dependencies": {
+    "next": "15.5.9",
+    "pg": "^8.16.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/pg": "^8.15.5",
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
+    "embedded-postgres": "16.13.0-beta.16",
+    "typescript": "5.8.3"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

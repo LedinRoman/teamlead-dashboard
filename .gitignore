@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# local data and encryption key
+data/
+
+# secrets — never commit real env files
+.env
+.env.local
+.env*.local
+*.pem
+*.key
+
+# compiled output of the metrics verification script
+.tmp-verify/
+.tmp-*
+*.tsbuildinfo
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+data
+.tmp-verify
+.tmp-*
+*.log
+*.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+agent-transcripts
