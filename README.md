@@ -17,11 +17,7 @@ No Node.js and no terminal. Download the app, open it, paste a Jira URL and a to
 
 The window is the app. Jira links open in your browser. The token and teams stay in a local database on this computer.
 
-The interface is English. RU in the sidebar switches it to Russian.
-
 ![Tour of Team Overview, Flow, Predictability and Quality](docs/screenshots/tour.gif)
-
-The board in the picture is fictional.
 
 ## Quick start
 
