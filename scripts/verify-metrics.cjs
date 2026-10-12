@@ -376,9 +376,9 @@ function buildWith(ruleOverrides, issues = [...raw, ...extraRaw]) {
 
 console.log('--- baseline for the rule scenarios ---');
 const base = buildWith({});
-check('In Review is unfinished by default', base.byKey['DEV-7'].effectiveCategory, 'indeterminate');
+check('In Review is done by default, same as Проверка', base.byKey['DEV-7'].effectiveCategory, 'done');
 check('Closed is done by default', base.byKey['DEV-8'].effectiveCategory, 'done');
-check('default done count', base.model.stats.find((s) => s.label === 'Done').value, 3);
+check('default done count', base.model.stats.find((s) => s.label === 'Done').value, 4);
 
 console.log('--- "In Review counts as done" ---');
 const review = buildWith({ doneStatuses: ['In Review'] });
@@ -387,12 +387,12 @@ check('Jira category is preserved for display', review.byKey['DEV-7'].statusCate
 check('done count rises', review.model.stats.find((s) => s.label === 'Done').value, 4);
 check('in progress count falls', review.model.stats.find((s) => s.label === 'In progress').value, 3);
 check(
-  'In Review is not Проверка, so cycle time stays empty',
+  'In Review ends the cycle, same as Проверка',
   [review.byKey['DEV-7'].doneAt, review.byKey['DEV-7'].doneAtSource],
-  [undefined, 'none'],
+  ['2026-03-17T09:00:00.000Z', 'changelog'],
 );
-check('lead time stays empty without Проверка', review.byKey['DEV-7'].leadTimeDays, undefined);
-check('cycle time stays empty without Проверка', review.byKey['DEV-7'].cycleTimeDays, undefined);
+check('lead time runs to In Review', review.byKey['DEV-7'].leadTimeDays, 6);
+check('cycle time runs to In Review', review.byKey['DEV-7'].cycleTimeDays, 4);
 check(
   'the reclassification is disclosed',
   review.model.caveats.some(
@@ -418,13 +418,13 @@ check(
 check(
   'so it is absent from throughput',
   noHistory.model.flow.throughputByWeek.reduce((sum, week) => sum + week.value, 0),
-  1,
+  2,
 );
 
 console.log('--- "Closed does not count as done" ---');
 const notDone = buildWith({ notDoneStatuses: ['Closed'] });
 check('DEV-8 becomes unfinished', notDone.byKey['DEV-8'].effectiveCategory, 'indeterminate');
-check('done count falls', notDone.model.stats.find((s) => s.label === 'Done').value, 2);
+check('done count falls', notDone.model.stats.find((s) => s.label === 'Done').value, 3);
 check('it can now raise signals', notDone.byKey['DEV-8'].signals.includes('very-stale'), true);
 check(
   'never-done wins over counts-as-done',
@@ -446,9 +446,9 @@ check(
 console.log('--- work started statuses ---');
 const startsAtReview = buildWith({ doneStatuses: [], workStartedStatuses: ['In Review'] });
 check(
-  'the clock starts at the configured status, not the first in-progress one',
+  'In Review is the cycle end, so it does not start the clock',
   startsAtReview.byKey['DEV-7'].firstInProgress,
-  '2026-03-17T09:00:00.000Z',
+  '2026-03-11T09:00:00.000Z',
 );
 check(
   'without a matching start status the start falls back to created',
@@ -460,7 +460,7 @@ console.log('--- attention signal selection ---');
 check(
   'default attention count',
   base.model.stats.find((s) => s.label === 'Needs attention').value,
-  5,
+  4,
 );
 check(
   'narrowing to blocked-by-status only',
@@ -658,9 +658,9 @@ check('empty parts are dropped', andAll(['project = ABC', undefined, '  ']), 'pr
 
 console.log('--- snapshot age ---');
 const now = Date.parse('2026-09-15T12:00:00.000Z');
-check('fresh snapshot is только что', formatSnapshotAge('2026-09-15T11:59:50.000Z', now), 'только что');
-check('minute-old snapshot', formatSnapshotAge('2026-09-15T11:57:00.000Z', now), '3 мин назад');
-check('hour-old snapshot', formatSnapshotAge('2026-09-15T10:00:00.000Z', now), '2 ч назад');
+check('fresh snapshot is just now', formatSnapshotAge('2026-09-15T11:59:50.000Z', now), 'just now');
+check('minute-old snapshot', formatSnapshotAge('2026-09-15T11:57:00.000Z', now), '3 min ago');
+check('hour-old snapshot', formatSnapshotAge('2026-09-15T10:00:00.000Z', now), '2h ago');
 
 console.log('');
 if (failures.length > 0) {
