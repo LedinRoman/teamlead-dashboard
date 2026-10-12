@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import type { CycleBar } from '@backend/metrics/cycle-overview';
 import { cycleBarTooltip, formatCycleDuration, formatStoryPoints } from '@backend/metrics/cycle-overview';
 import type { CategoryCount, SeriesPoint } from '@shared/types';
@@ -96,6 +97,7 @@ export function BarChart({
   formatX = (label) => label,
   formatY,
 }: AxisChartProps) {
+  const { t } = useI18n();
   const [hover, setHover] = useState<string | null>(null);
   if (data.length === 0) return null;
   const { plotWidth, ticks, yOf, tickEvery } = axisFrame(data, height);
@@ -105,7 +107,7 @@ export function BarChart({
 
   return (
     <figure className="chart-frame" style={{ margin: 0 }}>
-      <svg className="chart-svg" viewBox={`0 0 ${VIEW_WIDTH} ${height}`} role="img" aria-label={`${yLabel} by ${xLabel}`}>
+      <svg className="chart-svg" viewBox={`0 0 ${VIEW_WIDTH} ${height}`} role="img" aria-label={t(`${yLabel} by ${xLabel}`, `${yLabel} по ${xLabel}`)}>
         <Axes height={height} ticks={ticks} yOf={yOf} xLabel={xLabel} yLabel={yLabel} formatY={formatY} />
         {data.map((point, index) => {
           const centre = PAD_LEFT + slot * index + slot / 2;
@@ -145,7 +147,7 @@ export function BarChart({
         })}
       </svg>
       <figcaption className="caption">
-        {hovered ? hovered.hint ?? `${hovered.label}: ${formatNumber(hovered.value)}` : caption ?? 'Hover a bar for the count.'}
+        {hovered ? hovered.hint ?? `${hovered.label}: ${formatNumber(hovered.value)}` : caption ?? t('Hover a bar for the count.', 'Наведите на столбец, чтобы увидеть число.')}
       </figcaption>
     </figure>
   );
@@ -161,6 +163,7 @@ export function LineChart({
   formatX = (label) => label,
   formatY,
 }: AxisChartProps) {
+  const { t } = useI18n();
   if (data.length === 0) return null;
   const { plotWidth, ticks, yOf, tickEvery } = axisFrame(data, height);
   const xOf = (index: number) =>
@@ -170,7 +173,7 @@ export function LineChart({
 
   return (
     <figure className="chart-frame" style={{ margin: 0 }}>
-      <svg className="chart-svg" viewBox={`0 0 ${VIEW_WIDTH} ${height}`} role="img" aria-label={`${yLabel} over ${xLabel}`}>
+      <svg className="chart-svg" viewBox={`0 0 ${VIEW_WIDTH} ${height}`} role="img" aria-label={t(`${yLabel} over ${xLabel}`, `${yLabel} по ${xLabel}`)}>
         <Axes height={height} ticks={ticks} yOf={yOf} xLabel={xLabel} yLabel={yLabel} formatY={formatY} />
         <polyline points={points} fill="none" stroke={colour} strokeWidth={1.8} strokeLinejoin="round" />
         {data.map((point, index) => (
@@ -200,6 +203,8 @@ export function DonutChart({
   caption?: string;
   unitLabel?: string;
 }) {
+  const { t } = useI18n();
+  const units = unitLabel === 'work items' ? t('work items', 'задачи') : unitLabel;
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
   if (total === 0 || data.length === 0) return null;
 
@@ -223,7 +228,7 @@ export function DonutChart({
   return (
     <figure className="chart-frame" style={{ margin: 0 }}>
       <div className="row" style={{ gap: 16, alignItems: 'center' }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Share of ${unitLabel}`}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t(`Share of ${units}`, `Доля: ${units}`)}>
           {slices.map((slice) => (
             <path key={slice.label} d={slice.path} fill={slice.colour} />
           ))}
@@ -231,7 +236,7 @@ export function DonutChart({
             {total}
           </text>
           <text x={centre} y={centre + 12} textAnchor="middle" className="chart-tick">
-            total
+            {t('total', 'всего')}
           </text>
         </svg>
         <div className="stack" style={{ gap: 3, minWidth: 0, flex: 1 }}>
@@ -290,6 +295,8 @@ export function HBarList({
   limit?: number;
   unitLabel?: string;
 }) {
+  const { t } = useI18n();
+  const units = unitLabel === 'work items' ? t('work items', 'задачи') : unitLabel;
   if (data.length === 0) return null;
   const rows = data.slice(0, limit);
   const hidden = data.length - rows.length;
@@ -297,7 +304,7 @@ export function HBarList({
 
   return (
     <figure className="chart-frame" style={{ margin: 0 }}>
-      <div className="hbar-list" role="list" aria-label={`${unitLabel} per category`}>
+      <div className="hbar-list" role="list" aria-label={t(`${units} per category`, `${units} по категориям`)}>
         {rows.map((row) => (
           <div key={row.label} className="hbar-row" role="listitem">
             <span className="hbar-label" title={row.label}>
@@ -316,7 +323,7 @@ export function HBarList({
       {(caption || hidden > 0) && (
         <figcaption className="caption">
           {caption}
-          {hidden > 0 ? `${caption ? ' · ' : ''}${hidden} more not shown` : ''}
+          {hidden > 0 ? `${caption ? ' · ' : ''}${t(`${hidden} more not shown`, `ещё ${hidden} не показано`)}` : ''}
         </figcaption>
       )}
     </figure>
@@ -334,12 +341,13 @@ export function SegmentBar({
   onSelect?: (id: string) => void;
   selected?: string;
 }) {
+  const { t } = useI18n();
   const total = segments.reduce((sum, segment) => sum + segment.value, 0);
   if (total === 0) return null;
   const visible = segments.filter((segment) => segment.value > 0);
   return (
     <figure className="chart-frame" style={{ margin: 0 }}>
-      <div className="usage-bar" role="img" aria-label={caption ?? 'Composition'}>
+      <div className="usage-bar" role="img" aria-label={caption ?? t('Composition', 'Состав')}>
         {visible.map((segment) => {
           const id = segment.id ?? segment.label;
           const active = selected === id;
@@ -405,6 +413,7 @@ export function CycleTimeBarChart({
   onExclude?: (key: string) => void;
   onOverrideStart?: (key: string) => void;
 }) {
+  const { t } = useI18n();
   const [hover, setHover] = useState<string | null>(null);
   if (bars.length === 0) return null;
 
@@ -422,14 +431,14 @@ export function CycleTimeBarChart({
       style={{ margin: 0 }}
     >
       <div className="cycle-chart-head">
-        <span className="cycle-chart-legend" aria-label="Development and the QA queue">
+        <span className="cycle-chart-legend" aria-label={t('Development and the QA queue', 'Разработка и очередь QA')}>
           <span className="cycle-chart-legend-item">
             <span className="cycle-chart-legend-swatch cycle-chart-seg-dev" />
-            Development
+            {t('Development', 'Разработка')}
           </span>
           <span className="cycle-chart-legend-item">
             <span className="cycle-chart-legend-swatch cycle-chart-seg-qa" />
-            QA WIP
+            {t('QA WIP', 'QA WIP')}
           </span>
         </span>
         <span className="cycle-chart-scale">
@@ -444,7 +453,7 @@ export function CycleTimeBarChart({
           ))}
           {medianPct !== undefined && (
             <span className="cycle-ref-label" style={{ left: `${medianPct}%` }}>
-              Median
+              {t('Median', 'Медиана')}
             </span>
           )}
           {p85Pct !== undefined && (
@@ -467,7 +476,7 @@ export function CycleTimeBarChart({
         className="cycle-chart-scroll"
         style={{ maxHeight: Math.min(bars.length, CYCLE_MAX_ROWS) * CYCLE_ROW_PX }}
         role="list"
-        aria-label="Cycle time by work item"
+        aria-label={t('Cycle time by work item', 'Cycle time по задачам')}
       >
         {bars.map((bar) => {
           const tip = cycleBarTooltip(bar, endStatus);
@@ -494,7 +503,7 @@ export function CycleTimeBarChart({
                   <span className="cycle-chart-sp">{formatStoryPoints(bar.storyPoints)}</span>
                 )}
                 {(bar.startOverridden || bar.endOverridden) && (
-                  <span className="cycle-chart-override-mark" title="Override дат">
+                  <span className="cycle-chart-override-mark" title={t('Date override', 'Override дат')}>
                     *
                   </span>
                 )}
@@ -527,8 +536,8 @@ export function CycleTimeBarChart({
                 <button
                   type="button"
                   className="cycle-chart-exclude"
-                  aria-label={`Исключить ${bar.key}`}
-                  title="Исключить из расчёта и графика"
+                  aria-label={t(`Exclude ${bar.key}`, `Исключить ${bar.key}`)}
+                  title={t('Exclude from the calculation and the chart', 'Исключить из расчёта и графика')}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -542,8 +551,8 @@ export function CycleTimeBarChart({
                 <button
                   type="button"
                   className="cycle-chart-override"
-                  aria-label={`Override дат ${bar.key}`}
-                  title="Подставить ключ в override дат"
+                  aria-label={t(`Date override ${bar.key}`, `Override дат ${bar.key}`)}
+                  title={t('Fill this key into the date override', 'Подставить ключ в override дат')}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -567,7 +576,10 @@ export function CycleTimeBarChart({
               ))}
           </span>
         ) : (
-          'Blue is development, teal is the Ready to QA queue. Median and P85 are the full cycle.'
+          t(
+            'Blue is development, teal is the Ready to QA queue. Median and P85 are the full cycle.',
+            'Синий — разработка, бирюзовый — очередь Ready to QA. Медиана и P85 — полный цикл.',
+          )
         )}
       </figcaption>
     </figure>

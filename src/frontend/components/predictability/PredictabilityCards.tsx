@@ -1,36 +1,46 @@
+import { useI18n } from '@frontend/i18n/locale';
 import { Hint } from '@frontend/components/ui';
 import { formatStoryPoints } from '@backend/metrics/cycle-overview';
-import { METRIC_HINTS } from '@backend/metrics/predictability-copy';
+import { metricHints } from '@backend/metrics/predictability-copy';
 import type { PredictabilitySnapshot } from '@backend/metrics/predictability-model';
 
 export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnapshot }) {
+  const { t, locale } = useI18n();
+  const hints = metricHints(locale);
   const { summary, incomplete } = snapshot;
-  const reliabilityTitle = incomplete ? 'Done so far' : 'Commitment reliability';
+  const reliabilityTitle = incomplete ? t('Done so far', 'Сделано пока') : t('Commitment reliability', 'Надёжность commitment');
+  const openNote = t(
+    'While the sprint is open, this is progress so far, not a final score.',
+    'Пока спринт открыт, это текущий прогресс, а не итоговая оценка.',
+  );
   return (
     <div className="stat-bar predictability-stats">
-      <div className="stat" title={METRIC_HINTS.reliability}>
+      <div className="stat" title={hints.reliability}>
         <span className="stat-label">
-          <Hint text={incomplete ? `${METRIC_HINTS.reliability} While the sprint is open, this is progress so far, not a final score.` : METRIC_HINTS.reliability}>
+          <Hint text={incomplete ? `${hints.reliability} ${openNote}` : hints.reliability}>
             {reliabilityTitle}
           </Hint>
         </span>
-        <span className="stat-value">{formatPct(summary.reliability.taskPercent)}</span>
+        <span className="stat-value">{formatPct(summary.reliability.taskPercent, t)}</span>
         <span className="stat-hint">
           {summary.reliability.committedTasks === 0
-            ? 'No data'
-            : `${summary.reliability.completedTasks} of ${summary.reliability.committedTasks} issues`}
+            ? t('No data', 'Нет данных')
+            : t(
+                `${summary.reliability.completedTasks} of ${summary.reliability.committedTasks} issues`,
+                `${summary.reliability.completedTasks} из ${summary.reliability.committedTasks} задач`,
+              )}
         </span>
-        <span className="stat-hint" title={METRIC_HINTS.reliabilitySp}>
+        <span className="stat-hint" title={hints.reliabilitySp}>
           {summary.reliability.committedSp === 0 && summary.reliability.unestimated > 0
-            ? 'Story points unavailable — some issues are unestimated'
+            ? t('Story points unavailable — some issues are unestimated', 'Story points недоступны — часть задач без оценки')
             : summary.reliability.committedSp === 0
               ? ''
-              : `${fmtSp(summary.reliability.completedSp)} of ${fmtSp(summary.reliability.committedSp)}`}
+              : `${fmtSp(summary.reliability.completedSp)} ${t('of', 'из')} ${fmtSp(summary.reliability.committedSp)}`}
         </span>
       </div>
-      <div className="stat" title={METRIC_HINTS.scopeAdded}>
+      <div className="stat" title={hints.scopeAdded}>
         <span className="stat-label">
-          <Hint text={METRIC_HINTS.scopeAdded}>Scope added</Hint>
+          <Hint text={hints.scopeAdded}>{t('Scope added', 'Добавленный scope')}</Hint>
         </span>
         <span className="stat-value">
           {summary.added.percentOfCommitment === null
@@ -38,15 +48,18 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
             : signedPct(summary.added.percentOfCommitment)}
         </span>
         <span className="stat-hint">
-          {summary.added.tasks} {taskWord(summary.added.tasks)} · {fmtSp(summary.added.storyPoints)}
+          {summary.added.tasks} {taskWord(summary.added.tasks, locale)} · {fmtSp(summary.added.storyPoints)}
         </span>
         <span className="stat-hint">
-          {summary.added.completedTasks} {taskWord(summary.added.completedTasks)} completed
+          {t(
+            `${summary.added.completedTasks} ${taskWord(summary.added.completedTasks, 'en')} completed`,
+            `${summary.added.completedTasks} ${taskWord(summary.added.completedTasks, 'ru')} завершено`,
+          )}
         </span>
       </div>
-      <div className="stat" title={METRIC_HINTS.scopeDrop}>
+      <div className="stat" title={hints.scopeDrop}>
         <span className="stat-label">
-          <Hint text={METRIC_HINTS.scopeDrop}>Scope drop</Hint>
+          <Hint text={hints.scopeDrop}>{t('Scope drop', 'Снятый scope')}</Hint>
         </span>
         <span className="stat-value">
           {summary.removed.percentOfCommitment === null
@@ -54,39 +67,42 @@ export function PredictabilityCards({ snapshot }: { snapshot: PredictabilitySnap
             : signedPct(-Math.abs(summary.removed.percentOfCommitment))}
         </span>
         <span className="stat-hint">
-          {summary.removed.tasks} {taskWord(summary.removed.tasks)} · {fmtSp(summary.removed.storyPoints)}
+          {summary.removed.tasks} {taskWord(summary.removed.tasks, locale)} · {fmtSp(summary.removed.storyPoints)}
         </span>
-        <span className="stat-hint">removed from commitment</span>
+        <span className="stat-hint">{t('removed from commitment', 'снято с commitment')}</span>
       </div>
-      <div className="stat" title={METRIC_HINTS.spillover}>
+      <div className="stat" title={hints.spillover}>
         <span className="stat-label">
-          <Hint text={METRIC_HINTS.spillover}>{incomplete ? 'Still unfinished' : 'Spillover'}</Hint>
+          <Hint text={hints.spillover}>{incomplete ? t('Still unfinished', 'Ещё не завершено') : t('Spillover', 'Перенос')}</Hint>
         </span>
         <span className="stat-value">{summary.spillover.tasks}</span>
         <span className="stat-hint">
-          {taskWord(summary.spillover.tasks)} · {fmtSp(summary.spillover.storyPoints)}
+          {taskWord(summary.spillover.tasks, locale)} · {fmtSp(summary.spillover.storyPoints)}
         </span>
       </div>
-      <div className="stat" title={METRIC_HINTS.unplanned}>
+      <div className="stat" title={hints.unplanned}>
         <span className="stat-label">
-          <Hint text={METRIC_HINTS.unplanned}>Unplanned delivered</Hint>
+          <Hint text={hints.unplanned}>{t('Unplanned delivered', 'Вне плана, сдано')}</Hint>
         </span>
         <span className="stat-value">{summary.unplanned.tasks}</span>
         <span className="stat-hint">
-          {taskWord(summary.unplanned.tasks)} · {fmtSp(summary.unplanned.storyPoints)}
+          {taskWord(summary.unplanned.tasks, locale)} · {fmtSp(summary.unplanned.storyPoints)}
         </span>
         <span className="stat-hint">
           {summary.unplanned.percentOfCommitment === null
-            ? 'no completed work yet'
-            : `${Math.round(summary.unplanned.percentOfCommitment)}% of completed`}
+            ? t('no completed work yet', 'завершённой работы ещё нет')
+            : t(
+                `${Math.round(summary.unplanned.percentOfCommitment)}% of completed`,
+                `${Math.round(summary.unplanned.percentOfCommitment)}% от завершённого`,
+              )}
         </span>
       </div>
     </div>
   );
 }
 
-function formatPct(value: number | null): string {
-  if (value === null) return 'No data';
+function formatPct(value: number | null, t: (en: string, ru: string) => string): string {
+  if (value === null) return t('No data', 'Нет данных');
   return `${Math.round(value)}%`;
 }
 
@@ -103,6 +119,11 @@ function fmtSp(value: number): string {
   return formatStoryPoints(value);
 }
 
-function taskWord(count: number): string {
-  return count === 1 ? 'issue' : 'issues';
+function taskWord(count: number, locale: 'en' | 'ru'): string {
+  if (locale !== 'ru') return count === 1 ? 'issue' : 'issues';
+  const n10 = Math.abs(count) % 10;
+  const n100 = Math.abs(count) % 100;
+  if (n10 === 1 && n100 !== 11) return 'задача';
+  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'задачи';
+  return 'задач';
 }

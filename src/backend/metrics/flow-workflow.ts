@@ -1,3 +1,4 @@
+import { tr } from '../../shared/locale';
 import type { FlowStageId, FlowWorkflow, JiraStatusOption } from '@shared/types';
 import { DEFAULT_CYCLE_START_STATUS, ENGINEERING_DONE_STATUS, matchesAny, statusEquals } from './rules';
 
@@ -17,18 +18,18 @@ export const EXCLUSIVE_FLOW_STAGES: Array<
 ];
 
 export const DEFAULT_FLOW_WORKFLOW: FlowWorkflow = {
-  notStarted: ['К выполнению'],
-  development: ['В работе', 'architecture', 'Fix'],
+  notStarted: ['To Do'],
+  development: ['In Progress'],
   review: [],
   rework: [],
   qa: [],
   readyForRelease: [],
-  done: ['Готово'],
+  done: ['Done'],
   cancelled: [],
-  blocked: ['BLOCKED', 'blocked', 'on hold', 'impediment', 'waiting'],
-  inReview: ['Проверка'],
+  blocked: ['Blocked'],
+  inReview: ['In Review'],
   qaQueue: ['Ready to QA'],
-  qaEnd: ['Проверка', 'Fix'],
+  qaEnd: ['In Review'],
   cycleStart: DEFAULT_CYCLE_START_STATUS,
   cycleEnd: ENGINEERING_DONE_STATUS,
   timelineMinSegmentPct: 2,
@@ -94,13 +95,23 @@ export function validateFlowWorkflow(
   const warnings: string[] = [];
 
   if (workflow.development.length === 0) {
-    errors.push('Нужна хотя бы одна development-стадия — иначе нельзя считать Development WIP.');
+    errors.push(
+      tr(
+        'Add at least one development stage, or Development WIP cannot be counted.',
+        'Нужна хотя бы одна development-стадия — иначе нельзя считать Development WIP.',
+      ),
+    );
   }
   if (!workflow.cycleStart.trim()) {
-    errors.push('Нет точки начала Development Cycle Time.');
+    errors.push(tr('Development cycle time has no start status.', 'Нет точки начала Development Cycle Time.'));
   }
   if (!workflow.cycleEnd.trim() && workflow.inReview.length === 0) {
-    errors.push('Нет точки завершения Development Cycle Time (первая проверка).');
+    errors.push(
+      tr(
+        'Development cycle time has no end (the first review).',
+        'Нет точки завершения Development Cycle Time (первая проверка).',
+      ),
+    );
   }
 
   const seen = new Map<string, FlowStageId>();
@@ -110,7 +121,12 @@ export function validateFlowWorkflow(
       if (!key) continue;
       const previous = seen.get(key);
       if (previous && previous !== stage) {
-        errors.push(`Статус «${name}» входит и в «${previous}», и в «${stage}».`);
+        errors.push(
+          tr(
+            `Status “${name}” is in both “${previous}” and “${stage}”.`,
+            `Статус «${name}» входит и в «${previous}», и в «${stage}».`,
+          ),
+        );
       } else {
         seen.set(key, stage);
       }
@@ -121,17 +137,30 @@ export function validateFlowWorkflow(
   if (known.size > 0) {
     const missing = [...seen.keys()].filter((key) => !known.has(key));
     if (missing.length > 0) {
-      warnings.push(`В Jira сейчас нет статусов: ${missing.join(', ')}. Возможно, их переименовали.`);
+      warnings.push(
+        tr(
+          `These statuses are not in Jira right now: ${missing.join(', ')}. They may have been renamed.`,
+          `В Jira сейчас нет статусов: ${missing.join(', ')}. Возможно, их переименовали.`,
+        ),
+      );
     }
   }
 
   const qaWipAvailable = workflow.qa.length + workflow.qaQueue.length > 0 && workflow.qaEnd.length > 0;
   const qaUnavailableReason = qaWipAvailable
     ? undefined
-    : 'QA WIP недоступен: нет очереди QA и статусов конца (Проверка или Fix).';
+    : tr(
+        'QA WIP is unavailable: there is no QA queue and no end status (Review or Fix).',
+        'QA WIP недоступен: нет очереди QA и статусов конца (Проверка или Fix).',
+      );
   if (!qaWipAvailable) warnings.push(qaUnavailableReason!);
   if (workflow.review.length === 0) {
-    warnings.push('Стадия Review пустая — на доске нет отдельного code review.');
+    warnings.push(
+      tr(
+        'The Review stage is empty — this board has no separate code review.',
+        'Стадия Review пустая — на доске нет отдельного code review.',
+      ),
+    );
   }
 
   return { errors, warnings, qaWipAvailable, qaUnavailableReason };

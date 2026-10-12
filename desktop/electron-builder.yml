@@ -1,0 +1,32 @@
+appId: com.ledinroman.teamleaddashboard
+productName: Team Lead Dashboard
+executableName: TeamLeadDashboard
+copyright: Copyright © LedinRoman
+directories:
+  output: ../dist-desktop
+files:
+  - main.cjs
+  - package.json
+  - icon.png
+extraResources:
+  - from: bundle/standalone
+    to: standalone
+  - from: bundle/node
+    to: node
+asar: true
+icon: icon.png
+win:
+  signAndEditExecutable: false
+  target:
+    - target: portable
+      arch:
+        - x64
+mac:
+  identity: null
+  category: public.app-category.productivity
+  target:
+    - target: zip
+      arch:
+        - arm64
+        - x64
+artifactName: TeamLeadDashboard-${version}-${os}-${arch}.${ext}

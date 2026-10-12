@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { Field, Pill, Spinner } from '@frontend/components/ui';
 import type { JiraStatusOption, StatusCategory } from '@shared/types';
 
@@ -49,6 +50,7 @@ function Selected({
   onChange: (next: string[]) => void;
   emptyLabel: string;
 }) {
+  const { t } = useI18n();
   if (value.length === 0) return <span className="caption">{emptyLabel}</span>;
   return (
     <div className="chips">
@@ -57,7 +59,7 @@ function Selected({
           key={entry}
           type="button"
           className="chip"
-          title="Remove from this rule"
+          title={t('Remove from this rule', 'Убрать из правила')}
           onClick={() => onChange(value.filter((candidate) => candidate !== entry))}
         >
           {entry} <span aria-hidden>✕</span>
@@ -99,13 +101,17 @@ export function StatusRule({
   /** Set when Jira could not be read, which falls back to typed names. */
   unavailable?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | undefined>();
   const [showAll, setShowAll] = useState(false);
 
   if (unavailable) {
     return (
-      <Field label={label} hint={`${hint} Comma separated; Jira statuses could not be loaded.`}>
+      <Field
+        label={label}
+        hint={`${hint} ${t('Comma separated; Jira statuses could not be loaded.', 'Через запятую: статусы Jira загрузить не удалось.')}`}
+      >
         <input
           type="text"
           value={value.join(', ')}
@@ -133,16 +139,19 @@ export function StatusRule({
       <div className="stack" style={{ gap: 7 }}>
         <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
           <button type="button" className="subtle" onClick={() => setOpen(!open)}>
-            {open ? 'Done choosing' : value.length > 0 ? 'Change' : 'Choose statuses'}
+            {open ? t('Done choosing', 'Готово') : value.length > 0 ? t('Change', 'Изменить') : t('Choose statuses', 'Выбрать статусы')}
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Selected value={value} onChange={onChange} emptyLabel="Nothing selected." />
+            <Selected value={value} onChange={onChange} emptyLabel={t('Nothing selected.', 'Ничего не выбрано.')} />
           </div>
         </div>
 
         {missing.length > 0 && (
           <span className="caption">
-            Saved but not on this site any more: {missing.join(', ')}. Remove the chip if the status was renamed.
+            {t(
+              `Saved but not on this site any more: ${missing.join(', ')}. Remove the chip if the status was renamed.`,
+              `Сохранено, но на этом сайте больше нет: ${missing.join(', ')}. Уберите чип, если статус переименовали.`,
+            )}
           </span>
         )}
 
@@ -150,7 +159,10 @@ export function StatusRule({
           <div className="picker">
             {visibleGroups.length === 0 && (
               <span className="caption">
-                None of your teams point at a project yet. Use &ldquo;every project&rdquo; below.
+                {t(
+                  'None of your teams point at a project yet. Use “every project” below.',
+                  'Ни одна команда ещё не указывает на проект. Ниже можно показать все проекты.',
+                )}
               </span>
             )}
             {visibleGroups.map((group) => {
@@ -171,14 +183,14 @@ export function StatusRule({
                     {group.boardNames.length > 0 && (
                       <span className="caption truncate">{group.boardNames.join(', ')}</span>
                     )}
-                    {selectedHere ? <Pill tone="info">{selectedHere} selected</Pill> : null}
+                    {selectedHere ? <Pill tone="info">{t(`${selectedHere} selected`, `выбрано: ${selectedHere}`)}</Pill> : null}
                   </button>
 
                   {isExpanded && (
                     <div className="picker-body">
                       {loadingProject === group.key && !statuses && <Spinner />}
                       {statuses?.length === 0 && (
-                        <span className="caption">This project exposes no statuses.</span>
+                        <span className="caption">{t('This project exposes no statuses.', 'У этого проекта нет статусов.')}</span>
                       )}
                       {statuses?.map((status) => (
                         <label key={status.id} className="picker-option">
@@ -189,7 +201,16 @@ export function StatusRule({
                           />
                           <span className="truncate">{status.name}</span>
                           <Pill tone={CATEGORY_TONE[status.category]}>
-                            {CATEGORY_LABEL[status.category]}
+                            {t(
+                              CATEGORY_LABEL[status.category],
+                              status.category === 'new'
+                                ? 'К выполнению'
+                                : status.category === 'indeterminate'
+                                  ? 'В работе'
+                                  : status.category === 'done'
+                                    ? 'Готово'
+                                    : 'без категории',
+                            )}
                           </Pill>
                         </label>
                       ))}
@@ -202,8 +223,8 @@ export function StatusRule({
             {groups.some((group) => !group.inUse) && (
               <button type="button" className="subtle" onClick={() => setShowAll(!showAll)}>
                 {showAll
-                  ? 'Show only projects my teams use'
-                  : `Show every project (${groups.length})`}
+                  ? t('Show only projects my teams use', 'Только проекты моих команд')
+                  : t(`Show every project (${groups.length})`, `Показать все проекты (${groups.length})`)}
               </button>
             )}
           </div>
@@ -232,11 +253,12 @@ export function NameRule({
   options: Array<{ id: string; name: string; suffix?: string }>;
   unavailable?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   if (unavailable) {
     return (
-      <Field label={label} hint={`${hint} Comma separated; the list could not be loaded from Jira.`}>
+      <Field label={label} hint={`${hint} ${t('Comma separated; the list could not be loaded from Jira.', 'Через запятую: список из Jira не загрузился.')}`}>
         <input
           type="text"
           value={value.join(', ')}
@@ -251,10 +273,10 @@ export function NameRule({
       <div className="stack" style={{ gap: 7 }}>
         <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
           <button type="button" className="subtle" onClick={() => setOpen(!open)}>
-            {open ? 'Done choosing' : value.length > 0 ? 'Change' : 'Choose work types'}
+            {open ? t('Done choosing', 'Готово') : value.length > 0 ? t('Change', 'Изменить') : t('Choose work types', 'Выбрать типы')}
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Selected value={value} onChange={onChange} emptyLabel="Nothing excluded." />
+            <Selected value={value} onChange={onChange} emptyLabel={t('Nothing excluded.', 'Ничего не исключено.')} />
           </div>
         </div>
 

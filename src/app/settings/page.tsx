@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { Callout, Card, Field, Pill, Segmented } from '@frontend/components/ui';
 import { apiDelete, apiGet, apiPatch, apiPost, errorMessage } from '@frontend/lib/api';
 import { useAppData } from '@frontend/lib/app-data';
@@ -13,6 +14,7 @@ import type { Deployment, FlowWorkflow, MetricRules } from '@shared/types';
 type DeploymentChoice = 'auto' | Deployment;
 
 export default function SettingsPage() {
+  const { t } = useI18n();
   const { rules, connections, reload } = useAppData();
   const connection = connections[0];
   const [draft, setDraft] = useState<MetricRules>(rules);
@@ -60,7 +62,7 @@ export default function SettingsPage() {
       return;
     }
     if (jiraSecret.trim() && !jiraUrl.trim()) {
-      setError('Jira URL is required when saving a token.');
+      setError(t('Jira URL is required when saving a token.', 'Чтобы сохранить токен, нужен Jira URL.'));
       return;
     }
     setSaving(true);
@@ -117,7 +119,7 @@ export default function SettingsPage() {
       });
       setSaved(false);
       setError(undefined);
-      window.alert('Jira accepted the URL and token.');
+      window.alert(t('Jira accepted the URL and token.', 'Jira приняла URL и токен.'));
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -128,45 +130,51 @@ export default function SettingsPage() {
   const clearCache = async () => {
     const payload = await apiDelete<{ cleared: number }>('/api/cache');
     setCachedResponses(0);
-    window.alert(`Cleared ${payload.cleared} snapshot records.`);
+    window.alert(t(`Cleared ${payload.cleared} snapshot records.`, `Очищено записей снимка: ${payload.cleared}.`));
   };
 
   return (
     <div className="stack" style={{ maxWidth: 840 }}>
       <header className="page-header">
         <div className="page-header-meta">
-          <h1>Settings</h1>
+          <h1>{t('Settings', 'Настройки')}</h1>
         </div>
         <button type="button" className="primary" onClick={save} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('Saving…', 'Сохраняю…') : t('Save', 'Сохранить')}
         </button>
       </header>
 
       {error && <Callout tone="danger">{error}</Callout>}
-      {saved && <Callout tone="success">Saved.</Callout>}
+      {saved && <Callout tone="success">{t('Saved.', 'Сохранено.')}</Callout>}
 
       <Card
         title="Jira"
-        caption="One Jira URL and token for this dashboard. The token is encrypted in the database and only sent to your Jira site."
+        caption={t(
+          'One Jira URL and token for this dashboard. The token is encrypted in the database and only sent to your Jira site.',
+          'Один URL и токен Jira для этого дашборда. Токен шифруется в базе и уходит только на ваш сайт Jira.',
+        )}
       >
         <div className="stack">
           {connection && (
             <div className="row" style={{ gap: 6 }}>
               <Pill tone={connection.secretHint.includes('unreadable') ? 'danger' : 'neutral'}>
-                token {connection.secretHint}
+                {t('token', 'токен')} {connection.secretHint}
               </Pill>
-              <Pill tone="info">{connection.displayName ?? 'connected'}</Pill>
+              <Pill tone="info">{connection.displayName ?? t('connected', 'подключено')}</Pill>
               <Pill tone="neutral">{connection.deployment === 'cloud' ? 'Jira Cloud' : 'Jira Server / DC'}</Pill>
             </div>
           )}
           {connection?.secretHint.includes('unreadable') && (
-            <Callout tone="warning" title="Saved token cannot be decrypted">
-              Введите токен ещё раз и сохраните. URL можно оставить как есть.
+            <Callout tone="warning" title={t('Saved token cannot be decrypted', 'Сохранённый токен не расшифровать')}>
+              {t(
+                'Enter the token again and save. The URL can stay as it is.',
+                'Введите токен ещё раз и сохраните. URL можно оставить как есть.',
+              )}
             </Callout>
           )}
           <div className="grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
             <div style={{ gridColumn: 'span 2' }}>
-              <Field label="Jira URL" hint="Например https://acme.atlassian.net">
+              <Field label={t('Jira URL', 'Jira URL')} hint={t('For example https://acme.atlassian.net', 'Например https://acme.atlassian.net')}>
                 <input
                   type="url"
                   value={jiraUrl}
@@ -177,23 +185,27 @@ export default function SettingsPage() {
               </Field>
             </div>
             <div style={{ gridColumn: 'span 2' }}>
-              <Field label="Deployment">
+              <Field label={t('Deployment', 'Развёртывание')}>
                 <div>
                   <Segmented<DeploymentChoice>
                     value={jiraDeployment}
                     onChange={setJiraDeployment}
                     options={[
-                      { value: 'auto', label: 'Auto-detect' },
+                      { value: 'auto', label: t('Auto-detect', 'Определить автоматически') },
                       { value: 'cloud', label: 'Jira Cloud' },
-                      { value: 'server', label: 'Server / DC' },
+                      { value: 'server', label: t('Server / DC', 'Server / DC') },
                     ]}
                   />
                 </div>
               </Field>
             </div>
             <Field
-              label={needsJiraEmail ? 'Account email' : 'Account email (optional)'}
-              hint={needsJiraEmail ? 'Аккаунт, которому принадлежит API token.' : 'Пусто — bearer PAT для Server / DC.'}
+              label={needsJiraEmail ? t('Account email', 'Email аккаунта') : t('Account email (optional)', 'Email аккаунта (необязательно)')}
+              hint={
+                needsJiraEmail
+                  ? t('The account that owns the API token.', 'Аккаунт, которому принадлежит API token.')
+                  : t('Empty means a bearer PAT for Server / DC.', 'Пусто — bearer PAT для Server / DC.')
+              }
             >
               <input
                 type="email"
@@ -204,8 +216,12 @@ export default function SettingsPage() {
               />
             </Field>
             <Field
-              label="API token"
-              hint={connection ? 'Оставьте пустым, чтобы не менять сохранённый токен.' : 'Шифруется в базе. В логи не пишется.'}
+              label={t('API token', 'API token')}
+              hint={
+                connection
+                  ? t('Leave empty to keep the saved token.', 'Оставьте пустым, чтобы не менять сохранённый токен.')
+                  : t('Encrypted in the database. Not written to logs.', 'Шифруется в базе. В логи не пишется.')
+              }
             >
               <input
                 type="password"
@@ -217,60 +233,46 @@ export default function SettingsPage() {
           </div>
           <div className="row">
             <button type="button" onClick={() => void testJira()} disabled={!canTestJira || testing}>
-              {testing ? 'Testing…' : 'Test Jira'}
+              {testing ? t('Testing…', 'Проверяю…') : t('Test Jira', 'Проверить Jira')}
             </button>
           </div>
         </div>
       </Card>
 
-      <Card title="Thresholds">
+      <Card title={t('Thresholds', 'Пороги')}>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
           <NumberField
-            label="Stale after (days)"
+            label={t('Stale after (days)', 'Устаревает через (дней)')}
             value={draft.staleDays}
             onChange={(staleDays) => setDraft({ ...draft, staleDays })}
           />
           <NumberField
-            label="Very stale after (days)"
+            label={t('Very stale after (days)', 'Сильно устаревает через (дней)')}
             value={draft.veryStaleDays}
             onChange={(veryStaleDays) => setDraft({ ...draft, veryStaleDays })}
           />
           <NumberField
-            label="Default window (days)"
+            label={t('Default window (days)', 'Окно по умолчанию (дней)')}
             value={draft.defaultWindowDays}
             onChange={(defaultWindowDays) => setDraft({ ...draft, defaultWindowDays })}
           />
         </div>
       </Card>
 
-      <Card
-        title="Фильтры задач"
-        caption="Общие для Overview, Flow, Predictability и Quality. Сохраните, чтобы применить на всех экранах."
-      >
-        <label className="caption" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={Boolean(draft.excludeQaTitle)}
-            onChange={(event) => setDraft({ ...draft, excludeQaTitle: event.target.checked })}
-          />
-          Исключить [QA]
-        </label>
-        <p className="caption" style={{ marginTop: 8 }}>
-          Задачи с [QA] в названии не входят в cycle time, поток, predictability и quality.
-        </p>
-      </Card>
-
-      <Card title="Стадии Flow">
+      <Card title={t('Flow stages', 'Стадии Flow')}>
         <FlowWorkflowSettings value={workflow} onChange={setWorkflow} />
       </Card>
 
       <Card
-        title="Снимок данных"
-        caption="Общие ответы Jira (спринты, поиск, changelog) и посчитанные экраны. Пока снимок свежий, повторный заход не ходит в Jira. «Обновить» на страницах сбрасывает снимок."
+        title={t('Data snapshot', 'Снимок данных')}
+        caption={t(
+          'Shared Jira responses (sprints, search, changelog) and calculated screens. While the snapshot is fresh, opening a page again does not call Jira. Refresh on a page drops the snapshot.',
+          'Общие ответы Jira (спринты, поиск, changelog) и посчитанные экраны. Пока снимок свежий, повторный заход не ходит в Jira. «Обновить» на страницах сбрасывает снимок.',
+        )}
       >
         <div className="grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', marginBottom: 12 }}>
           <NumberField
-            label="Срок жизни снимка (минуты)"
+            label={t('Snapshot lifetime (minutes)', 'Срок жизни снимка (минуты)')}
             value={Math.max(0, Math.round(draft.cacheTtlSeconds / 60))}
             onChange={(minutes) =>
               setDraft({ ...draft, cacheTtlSeconds: Math.max(0, Math.round(minutes)) * 60 })
@@ -278,14 +280,19 @@ export default function SettingsPage() {
           />
         </div>
         <p className="caption" style={{ marginBottom: 12 }}>
-          0 — без снимка, каждый заход идёт в Jira. По умолчанию 15 минут.
+          {t(
+            '0 means no snapshot: every visit goes to Jira. The default is 15 minutes.',
+            '0 — без снимка, каждый заход идёт в Jira. По умолчанию 15 минут.',
+          )}
         </p>
         <div className="row" style={{ gap: 8 }}>
           <Pill tone="neutral">
-            {cachedResponses === null ? 'unknown' : `${cachedResponses} записей в снимке`}
+            {cachedResponses === null
+              ? t('unknown', 'неизвестно')
+              : t(`${cachedResponses} snapshot records`, `${cachedResponses} записей в снимке`)}
           </Pill>
           <button type="button" onClick={clearCache}>
-            Очистить снимок
+            {t('Clear snapshot', 'Очистить снимок')}
           </button>
         </div>
       </Card>

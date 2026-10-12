@@ -198,6 +198,29 @@ pre,
   color: var(--text-faint);
 }
 
+.locale-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 0 6px;
+}
+
+.locale-switch button {
+  border: 1px solid var(--stroke);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 4px 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.locale-switch button[data-active='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+
 .content {
   padding: 22px 26px 60px;
   min-width: 0;

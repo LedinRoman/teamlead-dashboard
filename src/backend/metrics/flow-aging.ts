@@ -1,4 +1,5 @@
 import type { FlowStageId, FlowWorkflow, NormalizedIssue } from '@shared/types';
+import { cycleTimeInMode } from './cycle-overview';
 import { classifyFlowIssue } from './flow-classify';
 import { lastEntryIntoStatus, reworkStartedAt } from './flow-timeline';
 import { daysBetween, elapsedDays, parseDate, workingDaysBetween, workingElapsedDays } from './time';
@@ -82,7 +83,7 @@ export function flowAgingAges(
     executionDays: Math.max(0, durationDays(episodeStart, executionEnd, working, holidays)),
     episodeStartedAt: episodeStart.toISOString(),
     statusEnteredAt: statusEntered.toISOString(),
-    originalCycleTimeDays: classified.rework ? issue.cycleTimeDays : undefined,
+    originalCycleTimeDays: classified.rework ? cycleTimeInMode(issue, options) : undefined,
   };
 }
 

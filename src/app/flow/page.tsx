@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { FlowAgingTable } from '@frontend/components/flow/FlowAgingTable';
 import { FlowHistory } from '@frontend/components/flow/FlowHistory';
 import { FlowIssueTimeline } from '@frontend/components/flow/FlowIssueTimeline';
@@ -42,6 +43,7 @@ export default function FlowPage() {
 }
 
 function FlowScreen() {
+  const { t } = useI18n();
   const { teams, rules } = useAppData();
   const [teamIds, setTeamIds] = useState<string[]>(() => (teams[0] ? [teams[0].id] : []));
   const [startStatus, setStartStatus] = useState(
@@ -193,15 +195,18 @@ function FlowScreen() {
     <div className="stack">
       <header className="page-header">
         <div className="page-header-meta">
-          <h1>Flow</h1>
+          <h1>{t('Flow', 'Поток')}</h1>
           <p className="caption">
-            Текущий WIP и Aging — активный спринт. Интервал Throughput и WIP в динамике задаётся на карточках.
+            {t(
+              'Current WIP and Aging use the active sprint. The Throughput and WIP-over-time range is set on those cards.',
+              'Текущий WIP и Aging — активный спринт. Интервал Throughput и WIP в динамике задаётся на карточках.',
+            )}
           </p>
         </div>
       </header>
 
       <div className="row">
-        <CheckDropdown label="Teams" summary={teamSummary(teams, teamIds)}>
+        <CheckDropdown label={t('Teams', 'Команды')} summary={teamSummary(teams, teamIds, t)}>
           {teams.map((team) => (
             <label key={team.id}>
               <input
@@ -224,7 +229,7 @@ function FlowScreen() {
 
       <div className="cycle-toolbar">
         <label className="cycle-filter">
-          <span className="caption">Старт</span>
+          <span className="caption">{t('Start', 'Старт')}</span>
           <StatusSelect
             statuses={statuses}
             value={startStatus}
@@ -237,7 +242,7 @@ function FlowScreen() {
           />
         </label>
         <label className="cycle-filter">
-          <span className="caption">Проверка</span>
+          <span className="caption">{t('Review', 'Проверка')}</span>
           <StatusSelect
             statuses={statuses}
             value={endStatus}
@@ -249,7 +254,7 @@ function FlowScreen() {
             fallback={ENGINEERING_DONE_STATUS}
           />
         </label>
-        <CheckDropdown label="Люди" summary={personSummary(people, assigneeIds)} disabled={people.length === 0}>
+        <CheckDropdown label={t('People', 'Люди')} summary={personSummary(people, assigneeIds, t)} disabled={people.length === 0}>
           <label>
             <input
               type="radio"
@@ -260,7 +265,7 @@ function FlowScreen() {
                 writeStoredIds(PEOPLE_STORAGE, []);
               }}
             />
-            <span>Все</span>
+            <span>{t('All', 'Все')}</span>
           </label>
           {people.map((person) => (
             <label key={person.id}>
@@ -280,8 +285,8 @@ function FlowScreen() {
         <Segmented<'calendar' | 'working'>
           value={workingDays ? 'working' : 'calendar'}
           options={[
-            { value: 'calendar', label: 'Календарные' },
-            { value: 'working', label: 'Рабочие' },
+            { value: 'calendar', label: t('Calendar', 'Календарные') },
+            { value: 'working', label: t('Working', 'Рабочие') },
           ]}
           onChange={(value) => {
             const next = value === 'working';
@@ -290,10 +295,10 @@ function FlowScreen() {
           }}
         />
         <button type="button" className="cycle-toolbar-btn" onClick={() => setHolidaysOpen(true)}>
-          Праздники ({holidays.length})
+          {t('Holidays', 'Праздники')} ({holidays.length})
         </button>
         <button type="button" className="cycle-toolbar-btn" onClick={() => setExcludeOpen(true)}>
-          Исключения ({excludedKeys.length})
+          {t('Exclusions', 'Исключения')} ({excludedKeys.length})
         </button>
       </div>
 
@@ -305,14 +310,19 @@ function FlowScreen() {
         </Callout>
       ))}
       {flow?.warnings
-        .filter((item) => item.includes('обрезан'))
+        .filter((item) => item.includes('truncated') || item.includes('обрезан'))
         .map((item) => (
           <p key={item} className="caption">
             {item}
           </p>
         ))}
       {assigneeIds.length > 0 && (
-        <p className="caption">Показаны задачи выбранных исполнителей — фильтр нагрузки потока, не рейтинг людей.</p>
+        <p className="caption">
+          {t(
+            'Showing issues for the selected assignees — a flow-load filter, not a ranking of people.',
+            'Показаны задачи выбранных исполнителей — фильтр нагрузки потока, не рейтинг людей.',
+          )}
+        </p>
       )}
 
       {loading && !viewFlow && <LoadingCards count={2} />}
@@ -320,10 +330,13 @@ function FlowScreen() {
       {viewFlow && (
         <>
           <Card
-            title="Текущий поток"
+            title={t('Current flow', 'Текущий поток')}
             caption={
               viewFlow.qaWipAvailable
-                ? 'WIP считается по текущим статусам задач активного спринта. QA WIP заканчивается переходом в Проверку или Fix.'
+                ? t(
+                    'WIP is counted from the current statuses of issues in the active sprint. QA WIP ends on a transition into Review or Fix.',
+                    'WIP считается по текущим статусам задач активного спринта. QA WIP заканчивается переходом в Проверку или Fix.',
+                  )
                 : viewFlow.qaUnavailableReason
             }
           >
@@ -332,7 +345,7 @@ function FlowScreen() {
               onSelect={(filter) => setStageFilter((current) => (current === filter ? undefined : filter))}
             />
           </Card>
-          <Card title="WIP по стадиям">
+          <Card title={t('WIP by stage', 'WIP по стадиям')}>
             <FlowStageBar
               flow={viewFlow}
               selected={stageFilter}
@@ -340,14 +353,14 @@ function FlowScreen() {
             />
           </Card>
           <Card
-            title="Aging WIP"
-            caption={agingSprintCaption(viewFlow.agingSprints)}
+            title={t('Aging WIP', 'Aging WIP')}
+            caption={agingSprintCaption(viewFlow.agingSprints, t)}
             actions={
               <Segmented<'until-review' | 'with-review'>
                 value={agingIncludesReview ? 'with-review' : 'until-review'}
                 options={[
-                  { value: 'until-review', label: 'До проверки' },
-                  { value: 'with-review', label: 'С проверкой' },
+                  { value: 'until-review', label: t('Until review', 'До проверки') },
+                  { value: 'with-review', label: t('With review', 'С проверкой') },
                 ]}
                 onChange={(value) => {
                   const next = value === 'with-review';
@@ -359,8 +372,14 @@ function FlowScreen() {
           >
             <p className="caption">
               {agingIncludesReview
-                ? 'Для «Проверки» и «Готово» в эпизоде показывается время выполнения (эпизод минус текущий статус). Оранжевое/красное — только если оно больше Median/P85, а не из‑за очереди в проверке или override дат.'
-                : 'Эпизод заканчивается первой Проверкой: задачи в «Проверке» и «Готово» не входят в Aging.'}
+                ? t(
+                    'For Review and Done, the episode shows execution time (episode minus the current status). Orange and red appear only when that is above Median/P85, not because of the review queue or a date override.',
+                    'Для «Проверки» и «Готово» в эпизоде показывается время выполнения (эпизод минус текущий статус). Оранжевое/красное — только если оно больше Median/P85, а не из‑за очереди в проверке или override дат.',
+                  )
+                : t(
+                    'The episode ends at the first review: issues in Review and Done are not in Aging.',
+                    'Эпизод заканчивается первой Проверкой: задачи в «Проверке» и «Готово» не входят в Aging.',
+                  )}
             </p>
             <FlowAgingTable
               flow={viewFlow}
@@ -377,8 +396,11 @@ function FlowScreen() {
           </Card>
           <div id="flow-issue-timeline">
           <Card
-            title="Таймлайн задачи"
-            caption="Ключ из проектов выбранных команд, не только текущий WIP. Цвет как у стадий WIP. Ширина куска и длительности — календарные или рабочие дни, как в фильтре сверху."
+            title={t('Issue timeline', 'Таймлайн задачи')}
+            caption={t(
+              'A key from the selected teams’ projects, not only current WIP. Colors match the WIP stages. Segment width and durations follow calendar or working days, as in the filter above.',
+              'Ключ из проектов выбранных команд, не только текущий WIP. Цвет как у стадий WIP. Ширина куска и длительности — календарные или рабочие дни, как в фильтре сверху.',
+            )}
           >
             <FlowIssueTimeline
               issues={viewFlow.issueTimelines ?? []}
@@ -393,16 +415,20 @@ function FlowScreen() {
             />
           </Card>
           </div>
-          <Card title="Время по этапам">
+          <Card title={t('Time by stage', 'Время по этапам')}>
             {refreshing && !viewFlow.stageTime ? (
-              <Spinner label="Updating…" />
+              <Spinner label={t('Updating…', 'Обновляю…')} />
             ) : (
               <FlowStageTime model={viewFlow.stageTime} />
             )}
           </Card>
           <Card
-            title="Throughput по спринтам"
-            caption={horizonCaption(viewFlow.throughputHorizon, 'Первый переход в Проверку внутри окна спринта.')}
+            title={t('Throughput by sprint', 'Throughput по спринтам')}
+            caption={horizonCaption(
+              viewFlow.throughputHorizon,
+              t('First transition into review inside the sprint window.', 'Первый переход в Проверку внутри окна спринта.'),
+              t,
+            )}
             actions={
               <HorizonSelect
                 value={throughputHorizon}
@@ -417,18 +443,22 @@ function FlowScreen() {
               <FlowThroughput
                 model={viewFlow.throughput}
                 filterNote={
-                  assigneeIds.length > 0 ? 'считается по выбранным исполнителям' : undefined
+                  assigneeIds.length > 0 ? t('counted for the selected assignees', 'считается по выбранным исполнителям') : undefined
                 }
               />
             ) : (
-              <p className="caption">Нет данных.</p>
+              <p className="caption">{t('No data.', 'Нет данных.')}</p>
             )}
           </Card>
           <Card
-            title="WIP в динамике"
+            title={t('WIP over time', 'WIP в динамике')}
             caption={horizonCaption(
               viewFlow.horizon,
-              'По оси Y — сколько задач горизонта было в Development WIP на конец дня. Не проценты и не дни.',
+              t(
+                'The Y axis is how many issues in the horizon were in Development WIP at the end of the day. Not percents and not days.',
+                'По оси Y — сколько задач горизонта было в Development WIP на конец дня. Не проценты и не дни.',
+              ),
+              t,
             )}
             actions={
               <HorizonSelect
@@ -546,9 +576,15 @@ function ExcludeDialog({
   onSubmit: () => void;
   onRestore: (key: string) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <Modal open={open} title="Исключения" onClose={onClose}>
-      <p className="caption">Не входят в Flow: карточки, стадии, Aging, время по этапам и throughput.</p>
+    <Modal open={open} title={t('Exclusions', 'Исключения')} onClose={onClose}>
+      <p className="caption">
+        {t(
+          'Left out of Flow: cards, stages, Aging, time by stage, and throughput.',
+          'Не входят в Flow: карточки, стадии, Aging, время по этапам и throughput.',
+        )}
+      </p>
       <form
         className="cycle-exclude-form"
         onSubmit={(event) => {
@@ -560,22 +596,22 @@ function ExcludeDialog({
           type="text"
           value={draft}
           placeholder="CDR-2029, CDR-2038"
-          aria-label="Ключи задач для исключения"
+          aria-label={t('Issue keys to exclude', 'Ключи задач для исключения')}
           onChange={(event) => onDraft(event.target.value)}
         />
         <button type="submit" className="cycle-exclude-add" disabled={!parseIssueKeys(draft).length}>
-          Добавить
+          {t('Add', 'Добавить')}
         </button>
       </form>
       {keys.length === 0 ? (
-        <p className="caption">Пока пусто.</p>
+        <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
       ) : (
         <ul className="cycle-exclude-list">
           {keys.map((key) => (
             <li key={key}>
               <span className="cycle-chart-key">{key}</span>
               <button type="button" className="cycle-exclude-restore" onClick={() => onRestore(key)}>
-                вернуть
+                {t('restore', 'вернуть')}
               </button>
             </li>
           ))}
@@ -602,10 +638,14 @@ function HolidaysDialog({
   onSubmit: () => void;
   onRestore: (day: string) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <Modal open={open} title="Праздники" onClose={onClose}>
+    <Modal open={open} title={t('Holidays', 'Праздники')} onClose={onClose}>
       <p className="caption">
-        Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список общий с Overview.
+        {t(
+          'These dates are not counted in Working mode. Saturday and Sunday are already excluded. The list is shared with Overview.',
+          'Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список общий с Overview.',
+        )}
       </p>
       <form
         className="cycle-exclude-form"
@@ -617,22 +657,22 @@ function HolidaysDialog({
         <input
           type="date"
           value={draft}
-          aria-label="Дата праздника"
+          aria-label={t('Holiday date', 'Дата праздника')}
           onChange={(event) => onDraft(event.target.value)}
         />
         <button type="submit" className="cycle-exclude-add" disabled={!/^\d{4}-\d{2}-\d{2}$/.test(draft)}>
-          Добавить
+          {t('Add', 'Добавить')}
         </button>
       </form>
       {days.length === 0 ? (
-        <p className="caption">Пока пусто.</p>
+        <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
       ) : (
         <ul className="cycle-exclude-list">
           {days.map((day) => (
             <li key={day}>
               <span className="cycle-chart-key">{day}</span>
               <button type="button" className="cycle-exclude-restore" onClick={() => onRestore(day)}>
-                сбросить
+                {t('reset', 'сбросить')}
               </button>
             </li>
           ))}
@@ -642,7 +682,9 @@ function HolidaysDialog({
   );
 }
 
-function sprintWord(count: number): string {
+type Tr = (en: string, ru: string) => string;
+
+function ruSprintWord(count: number): string {
   const n10 = count % 10;
   const n100 = count % 100;
   if (n10 === 1 && n100 !== 11) return 'спринт';
@@ -650,33 +692,53 @@ function sprintWord(count: number): string {
   return 'спринтов';
 }
 
-function agingSprintCaption(sprints?: { id: number; name: string }[]): string {
-  const scope =
-    !sprints || sprints.length === 0
-      ? 'Только задачи активного спринта. Сейчас активного спринта на досках нет.'
-      : sprints.length === 1
-        ? `Только текущий спринт: ${sprints[0].name}. Карточки WIP считают тот же набор.`
-        : `Только активные спринты: ${sprints.map((sprint) => sprint.name).join(', ')}. Карточки WIP считают тот же набор.`;
-  return scope;
+function sprintWord(count: number, t: Tr): string {
+  return t(count === 1 ? 'sprint' : 'sprints', ruSprintWord(count));
+}
+
+function agingSprintCaption(sprints: { id: number; name: string }[] | undefined, t: Tr): string {
+  if (!sprints || sprints.length === 0) {
+    return t(
+      'Only issues in the active sprint. There is no active sprint on the boards right now.',
+      'Только задачи активного спринта. Сейчас активного спринта на досках нет.',
+    );
+  }
+  if (sprints.length === 1) {
+    return t(
+      `Only the current sprint: ${sprints[0].name}. The WIP cards count the same set.`,
+      `Только текущий спринт: ${sprints[0].name}. Карточки WIP считают тот же набор.`,
+    );
+  }
+  const names = sprints.map((sprint) => sprint.name).join(', ');
+  return t(
+    `Only the active sprints: ${names}. The WIP cards count the same set.`,
+    `Только активные спринты: ${names}. Карточки WIP считают тот же набор.`,
+  );
 }
 
 function horizonCaption(
   horizon: { requested: number; used: number; from?: string; to?: string } | undefined,
   extra: string,
+  t: Tr,
 ): string {
   if (!horizon || horizon.used === 0) return extra;
   const range = horizon.from && horizon.to ? ` ${horizon.from} → ${horizon.to}.` : '';
+  const enWord = horizon.used === 1 ? 'sprint' : 'sprints';
   const used =
     horizon.used === horizon.requested
-      ? `Последние ${horizon.used} ${sprintWord(horizon.used)}.`
-      : `Запрошено ${horizon.requested}, на досках есть ${horizon.used}.`;
+      ? t(`Last ${horizon.used} ${enWord}.`, `Последние ${horizon.used} ${ruSprintWord(horizon.used)}.`)
+      : t(
+          `Requested ${horizon.requested}, the boards have ${horizon.used}.`,
+          `Запрошено ${horizon.requested}, на досках есть ${horizon.used}.`,
+        );
   return `${used}${range} ${extra}`;
 }
 
 function HorizonSelect({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const { t } = useI18n();
   return (
     <label className="cycle-filter">
-      <span className="caption">Интервал</span>
+      <span className="caption">{t('Range', 'Интервал')}</span>
       <select
         className="cycle-def-select"
         value={value}
@@ -684,7 +746,7 @@ function HorizonSelect({ value, onChange }: { value: number; onChange: (value: n
       >
         {HORIZON_OPTIONS.map((count) => (
           <option key={count} value={count}>
-            {count} {sprintWord(count)}
+            {count} {sprintWord(count, t)}
           </option>
         ))}
       </select>
@@ -710,16 +772,16 @@ function writeStoredHorizon(key: string, value: number) {
   }
 }
 
-function teamSummary(teams: Team[], ids: string[]): string {
-  if (ids.length === 0) return 'Select teams';
-  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? '1 team';
-  return `${ids.length} teams`;
+function teamSummary(teams: Team[], ids: string[], t: Tr): string {
+  if (ids.length === 0) return t('Select teams', 'Выберите команды');
+  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? t('1 team', '1 команда');
+  return t(`${ids.length} teams`, `${ids.length} команд`);
 }
 
-function personSummary(people: CyclePerson[], ids: string[]): string {
-  if (ids.length === 0 || ids.length === people.length) return 'Все';
-  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? '1 чел.';
-  return `${ids.length} чел.`;
+function personSummary(people: CyclePerson[], ids: string[], t: Tr): string {
+  if (ids.length === 0 || ids.length === people.length) return t('All', 'Все');
+  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? t('1 person', '1 чел.');
+  return t(`${ids.length} people`, `${ids.length} чел.`);
 }
 
 function readStoredStatus(key: string): string | undefined {

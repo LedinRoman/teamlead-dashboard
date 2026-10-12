@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { QualityCards } from '@frontend/components/quality/QualityCards';
 import { QualityDefectsPanel } from '@frontend/components/quality/QualityDefects';
 import { QualityDistribution } from '@frontend/components/quality/QualityDistribution';
@@ -34,6 +35,7 @@ export default function QualityPage() {
 }
 
 function QualityScreen() {
+  const { t } = useI18n();
   const { teams, rules } = useAppData();
   const [teamIds, setTeamIds] = useState<string[]>(() => (teams[0] ? [teams[0].id] : []));
   const [sprints, setSprints] = useState<JiraSprintOption[]>([]);
@@ -192,13 +194,15 @@ function QualityScreen() {
     <div className="stack">
       <header className="page-header">
         <div className="page-header-meta">
-          <h1>Quality</h1>
-          <div className="page-header-sub">QA Returns и Rework Loops по когорте First QA.</div>
+          <h1>{t('Quality', 'Качество')}</h1>
+          <div className="page-header-sub">
+            {t('QA Returns and Rework Loops for the First QA cohort.', 'QA Returns и Rework Loops по когорте First QA.')}
+          </div>
         </div>
       </header>
 
       <div className="row">
-        <CheckDropdown label="Teams" summary={teamSummary(teams, teamIds)}>
+        <CheckDropdown label={t('Teams', 'Команды')} summary={teamSummary(teams, teamIds, t)}>
           {teams.map((team) => (
             <label key={team.id}>
               <input
@@ -211,7 +215,7 @@ function QualityScreen() {
             </label>
           ))}
         </CheckDropdown>
-        <CheckDropdown label="Sprint" summary={selectedSprint?.name ?? 'Выберите спринт'} disabled={sprintsLoading}>
+        <CheckDropdown label={t('Sprint', 'Спринт')} summary={selectedSprint?.name ?? t('Select a sprint', 'Выберите спринт')} disabled={sprintsLoading}>
           {sprints.map((sprint) => (
             <label key={sprint.id}>
               <input
@@ -226,14 +230,14 @@ function QualityScreen() {
               />
               <span>
                 {sprint.name}
-                {sprint.state === 'active' ? ' · active' : ''}
+                {sprint.state === 'active' ? t(' · active', ' · активный') : ''}
                 {sprint.startDate ? ` · ${sprint.startDate.slice(0, 10)}` : ''}
               </span>
             </label>
           ))}
         </CheckDropdown>
         <label className="cycle-filter">
-          <span className="caption">История</span>
+          <span className="caption">{t('History', 'История')}</span>
           <select
             className="cycle-def-select"
             value={historySprints}
@@ -245,7 +249,7 @@ function QualityScreen() {
           >
             {HISTORY_OPTIONS.map((count) => (
               <option key={count} value={count}>
-                {count} спринтов
+                {t(`${count} sprints`, `${count} спринтов`)}
               </option>
             ))}
           </select>
@@ -266,8 +270,8 @@ function QualityScreen() {
         <Segmented<'calendar' | 'working'>
           value={workingDays ? 'working' : 'calendar'}
           options={[
-            { value: 'calendar', label: 'Календарные' },
-            { value: 'working', label: 'Рабочие' },
+            { value: 'calendar', label: t('Calendar', 'Календарные') },
+            { value: 'working', label: t('Working', 'Рабочие') },
           ]}
           onChange={(value) => {
             const next = value === 'working';
@@ -276,12 +280,13 @@ function QualityScreen() {
           }}
         />
         <button type="button" className="cycle-toolbar-btn" onClick={() => setHolidaysOpen(true)}>
-          Праздники ({holidays.length})
+          {t('Holidays', 'Праздники')} ({holidays.length})
         </button>
         <button type="button" className="cycle-toolbar-btn" onClick={() => setExcludeOpen(true)}>
-          Исключения{excludedKeys.length ? ` (${excludedKeys.length})` : ''}
+          {t('Exclusions', 'Исключения')}
+          {excludedKeys.length ? ` (${excludedKeys.length})` : ''}
         </button>
-        <CheckDropdown label="Люди" summary={personSummary(people, assigneeIds)} disabled={people.length === 0}>
+        <CheckDropdown label={t('People', 'Люди')} summary={personSummary(people, assigneeIds, t)} disabled={people.length === 0}>
           <label>
             <input
               type="radio"
@@ -292,7 +297,7 @@ function QualityScreen() {
                 writeStoredIds(PEOPLE_STORAGE, []);
               }}
             />
-            <span>Все</span>
+            <span>{t('All', 'Все')}</span>
           </label>
           {people.map((person) => (
             <label key={person.id}>
@@ -311,7 +316,12 @@ function QualityScreen() {
         </CheckDropdown>
       </div>
       {assigneeIds.length > 0 && (
-        <p className="caption">Фильтр «Люди» действует только на таблицу задач, не на командные карточки.</p>
+        <p className="caption">
+          {t(
+            'The People filter applies only to the issue table, not the team cards.',
+            'Фильтр «Люди» действует только на таблицу задач, не на командные карточки.',
+          )}
+        </p>
       )}
 
       {holidaysError && <ErrorNotice error={holidaysError} />}
@@ -323,24 +333,33 @@ function QualityScreen() {
         <>
           {snapshot.dataQuality !== 'exact' && <QualityContext snapshot={snapshot} asOf={asOf} />}
           <QualityCards snapshot={snapshot} filter={filter} onFilter={setFilter} />
-          <Card title="Распределение возвратов">
+          <Card title={t('Return distribution', 'Распределение возвратов')}>
             <QualityDistribution snapshot={snapshot} filter={filter} onFilter={setFilter} />
           </Card>
           <Card
-            title="Открытые циклы"
-            caption={`Rework WIP когорты: ${snapshot.reworkWip}. Interrupted через Готово сюда не входят.`}
+            title={t('Open cycles', 'Открытые циклы')}
+            caption={t(
+              `Cohort rework WIP: ${snapshot.reworkWip}. Cycles interrupted by Done are not included.`,
+              `Rework WIP когорты: ${snapshot.reworkWip}. Interrupted через Готово сюда не входят.`,
+            )}
           >
             <QualityOpenCycles issues={snapshot.issues} onSelect={() => setFilter('open')} />
           </Card>
           <Card
-            title="Production и инциденты"
-            caption={`Созданы в окне спринта. Production ${snapshot.defects.production} · инциденты ${snapshot.defects.incidents} · без признака ${snapshot.defects.unproven}.`}
+            title={t('Production and incidents', 'Production и инциденты')}
+            caption={t(
+              `Created in the sprint window. Production ${snapshot.defects.production} · incidents ${snapshot.defects.incidents} · no signal ${snapshot.defects.unproven}.`,
+              `Созданы в окне спринта. Production ${snapshot.defects.production} · инциденты ${snapshot.defects.incidents} · без признака ${snapshot.defects.unproven}.`,
+            )}
           >
             <QualityDefectsPanel defects={snapshot.defects} />
           </Card>
           <Card
-            title="История спринтов"
-            caption="Return Rate каждого спринта считается по своей когорте First QA. Активный не финальный."
+            title={t('Sprint history', 'История спринтов')}
+            caption={t(
+              'Each sprint’s Return Rate is calculated on its own First QA cohort. The active sprint is not final.',
+              'Return Rate каждого спринта считается по своей когорте First QA. Активный не финальный.',
+            )}
           >
             <QualityHistory
               rows={history}
@@ -350,11 +369,14 @@ function QualityScreen() {
             />
           </Card>
           <Card
-            title="Задачи когорты"
-            caption="Когорта — First QA в окне спринта. Клик по карточке фильтрует таблицу. Раскрытие строки показывает циклы Fix → QA, не сырой changelog."
+            title={t('Cohort issues', 'Задачи когорты')}
+            caption={t(
+              'The cohort is First QA inside the sprint window. Clicking a card filters the table. Expanding a row shows Fix → QA cycles, not the raw changelog.',
+              'Когорта — First QA в окне спринта. Клик по карточке фильтрует таблицу. Раскрытие строки показывает циклы Fix → QA, не сырой changelog.',
+            )}
             actions={
               <button type="button" className="text-button" onClick={() => setFilter('all')}>
-                Сбросить фильтр
+                {t('Clear filter', 'Сбросить фильтр')}
               </button>
             }
           >
@@ -363,8 +385,13 @@ function QualityScreen() {
         </>
       )}
 
-      <Modal open={excludeOpen} title="Исключения" onClose={() => setExcludeOpen(false)}>
-        <p className="caption">Те же ключи, что на Overview и Flow. Не входят в когорту, карточки и таблицу.</p>
+      <Modal open={excludeOpen} title={t('Exclusions', 'Исключения')} onClose={() => setExcludeOpen(false)}>
+        <p className="caption">
+          {t(
+            'The same keys as on Overview and Flow. They are left out of the cohort, the cards, and the table.',
+            'Те же ключи, что на Overview и Flow. Не входят в когорту, карточки и таблицу.',
+          )}
+        </p>
         <form
           className="cycle-exclude-form"
           onSubmit={(event) => {
@@ -381,27 +408,30 @@ function QualityScreen() {
             onChange={(event) => setExcludeDraft(event.target.value)}
           />
           <button type="submit" className="cycle-exclude-add" disabled={!parseIssueKeys(excludeDraft).length}>
-            Добавить
+            {t('Add', 'Добавить')}
           </button>
         </form>
         {excludedKeys.length === 0 ? (
-          <p className="caption">Пока пусто.</p>
+          <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
         ) : (
           <ul className="cycle-exclude-list">
             {excludedKeys.map((key) => (
               <li key={key}>
                 <span className="cycle-chart-key">{key}</span>
                 <button type="button" className="cycle-exclude-restore" onClick={() => removeExcluded(key)}>
-                  вернуть
+                  {t('restore', 'вернуть')}
                 </button>
               </li>
             ))}
           </ul>
         )}
       </Modal>
-      <Modal open={holidaysOpen} title="Праздники" onClose={() => setHolidaysOpen(false)}>
+      <Modal open={holidaysOpen} title={t('Holidays', 'Праздники')} onClose={() => setHolidaysOpen(false)}>
         <p className="caption">
-          Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список общий с Overview и Flow.
+          {t(
+            'These dates are not counted in Working mode. Saturday and Sunday are already excluded. The list is shared with Overview and Flow.',
+            'Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список общий с Overview и Flow.',
+          )}
         </p>
         <form
           className="cycle-exclude-form"
@@ -413,22 +443,22 @@ function QualityScreen() {
           <input
             type="date"
             value={holidayDraft}
-            aria-label="Дата праздника"
+            aria-label={t('Holiday date', 'Дата праздника')}
             onChange={(event) => setHolidayDraft(event.target.value)}
           />
           <button type="submit" className="cycle-exclude-add" disabled={!/^\d{4}-\d{2}-\d{2}$/.test(holidayDraft)}>
-            Добавить
+            {t('Add', 'Добавить')}
           </button>
         </form>
         {holidays.length === 0 ? (
-          <p className="caption">Пока пусто.</p>
+          <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
         ) : (
           <ul className="cycle-exclude-list">
             {holidays.map((day) => (
               <li key={day}>
                 <span className="cycle-chart-key">{day}</span>
                 <button type="button" className="cycle-exclude-restore" onClick={() => void removeHolidayDate(day)}>
-                  сбросить
+                  {t('reset', 'сбросить')}
                 </button>
               </li>
             ))}
@@ -440,6 +470,7 @@ function QualityScreen() {
 }
 
 function QualityContext({ snapshot, asOf }: { snapshot: QualitySnapshot; asOf?: string }) {
+  const { t, locale } = useI18n();
   const tone =
     snapshot.dataQuality === 'invalid_configuration' || snapshot.dataQuality === 'unavailable'
       ? 'danger'
@@ -448,34 +479,58 @@ function QualityContext({ snapshot, asOf }: { snapshot: QualitySnapshot; asOf?: 
         : 'neutral';
   const title =
     snapshot.dataQuality === 'exact'
-      ? 'Точный snapshot'
+      ? t('Exact snapshot', 'Точный snapshot')
       : snapshot.dataQuality === 'partial'
-        ? 'Неполные данные'
+        ? t('Incomplete data', 'Неполные данные')
         : snapshot.dataQuality === 'invalid_configuration'
-          ? 'Не настроена QA-группа'
-          : 'Нет когорты';
+          ? t('QA group is not configured', 'Не настроена QA-группа')
+          : t('No cohort', 'Нет когорты');
   const start = snapshot.window.start?.slice(0, 10) ?? '—';
   const end = snapshot.window.end?.slice(0, 10) ?? '—';
   return (
     <Callout tone={tone} title={title}>
       <div>
-        {snapshot.sprintName}: First QA ∈ [{start}, {end}) · asOf {formatAsOf(asOf ?? snapshot.asOf)} · N={snapshot.n}
-        {snapshot.window.incomplete ? ' · спринт ещё идёт' : ''}
+        {snapshot.sprintName}: First QA ∈ [{start}, {end}) · asOf {formatAsOf(asOf ?? snapshot.asOf, locale)} · N={snapshot.n}
+        {snapshot.window.incomplete ? t(' · sprint still running', ' · спринт ещё идёт') : ''}
       </div>
       {snapshot.warnings.map((warning) => (
-        <div key={warning}>{warning}</div>
+        <div key={warning}>{qualityWarning(warning, t)}</div>
       ))}
       {snapshot.dataQuality === 'exact' && snapshot.warnings.length === 0 && (
-        <div>QA-группа = Ready to QA + Проверка. Возврат только в Fix.</div>
+        <div>
+          {t(
+            'QA group = Ready to QA + Review. A return is only into Fix.',
+            'QA-группа = Ready to QA + Проверка. Возврат только в Fix.',
+          )}
+        </div>
       )}
     </Callout>
   );
 }
 
-function formatAsOf(value: string): string {
+function qualityWarning(warning: string, t: (en: string, ru: string) => string): string {
+  if (warning === 'Неполная история: точный Rate и FPY по всей когорте недоступны') {
+    return t(
+      'Incomplete history: an exact Rate and FPY for the whole cohort are unavailable',
+      'Неполная история: точный Rate и FPY по всей когорте недоступны',
+    );
+  }
+  if (warning === 'В выбранном спринте нет задач с известным First QA Entry') {
+    return t(
+      'The selected sprint has no issues with a known First QA entry',
+      'В выбранном спринте нет задач с известным First QA Entry',
+    );
+  }
+  if (warning === 'Не настроена QA-группа (Ready to QA / Проверка)') {
+    return t('The QA group is not configured (Ready to QA / Review)', 'Не настроена QA-группа (Ready to QA / Проверка)');
+  }
+  return warning;
+}
+
+function formatAsOf(value: string, locale: string): string {
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) return value;
-  return new Date(parsed).toLocaleString('ru-RU');
+  return new Date(parsed).toLocaleString(locale === 'ru' ? 'ru-RU' : undefined);
 }
 
 function CheckDropdown({
@@ -502,16 +557,16 @@ function CheckDropdown({
   );
 }
 
-function teamSummary(teams: Team[], ids: string[]): string {
-  if (ids.length === 0) return 'Select teams';
-  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? '1 team';
-  return `${ids.length} teams`;
+function teamSummary(teams: Team[], ids: string[], t: (en: string, ru: string) => string): string {
+  if (ids.length === 0) return t('Select teams', 'Выберите команды');
+  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? t('1 team', '1 команда');
+  return t(`${ids.length} teams`, `${ids.length} команд`);
 }
 
-function personSummary(people: CyclePerson[], ids: string[]): string {
-  if (ids.length === 0 || ids.length === people.length) return 'Все';
-  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? '1 чел.';
-  return `${ids.length} чел.`;
+function personSummary(people: CyclePerson[], ids: string[], t: (en: string, ru: string) => string): string {
+  if (ids.length === 0 || ids.length === people.length) return t('All', 'Все');
+  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? t('1 person', '1 чел.');
+  return t(`${ids.length} people`, `${ids.length} чел.`);
 }
 
 function readStoredFlag(key: string): boolean {

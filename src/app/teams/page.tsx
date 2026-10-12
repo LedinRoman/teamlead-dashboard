@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { Callout, Card, EmptyState, Field, Pill, Spinner } from '@frontend/components/ui';
 import { apiDelete, apiGet, apiPost, apiPut, errorMessage } from '@frontend/lib/api';
 import { useAppData } from '@frontend/lib/app-data';
@@ -13,6 +14,7 @@ interface MetaPayload {
 }
 
 export default function TeamsPage() {
+  const { t } = useI18n();
   const { teams, connected, reload, loading } = useAppData();
   const [meta, setMeta] = useState<MetaPayload | null>(null);
   const [metaError, setMetaError] = useState<string | undefined>();
@@ -30,19 +32,31 @@ export default function TeamsPage() {
     })();
   }, [connected]);
 
-  if (loading) return <Spinner label="Loading teams" />;
+  if (loading) return <Spinner label={t('Loading teams', 'Загружаю команды')} />;
 
   if (!connected) {
     return (
-      <EmptyState title="Connect Jira first">
-        <span>Teams are built from real boards and people, so a connection is needed before this screen is useful.</span>
-        <a href="/settings">Go to Settings</a>
+      <EmptyState title={t('Connect Jira first', 'Сначала подключите Jira')}>
+        <span>
+          {t(
+            'Teams are built from real boards and people, so a connection is needed before this screen is useful.',
+            'Команды собираются из реальных досок и людей, поэтому без подключения этот экран бесполезен.',
+          )}
+        </span>
+        <a href="/settings">{t('Go to Settings', 'Перейти в настройки')}</a>
       </EmptyState>
     );
   }
 
   const remove = async (team: Team) => {
-    if (!window.confirm(`Delete team "${team.name}"? Dashboards pointing at it will show an error until repointed.`))
+    if (
+      !window.confirm(
+        t(
+          `Delete team "${team.name}"? Dashboards pointing at it will show an error until repointed.`,
+          `Удалить команду «${team.name}»? Дашборды, которые на неё ссылаются, будут показывать ошибку, пока их не переключат.`,
+        ),
+      )
+    )
       return;
     await apiDelete(`/api/teams/${team.id}`);
     await reload();
@@ -52,18 +66,21 @@ export default function TeamsPage() {
     <div className="stack">
       <header className="page-header">
         <div className="page-header-meta">
-          <h1>Teams</h1>
+          <h1>{t('Teams', 'Команды')}</h1>
           <div className="page-header-sub">
-            A team is your own grouping: the people you lead plus the boards or projects their work lives on.
+            {t(
+              'A team is your own grouping: the people you lead plus the boards or projects their work lives on.',
+              'Команда — ваша группировка: люди, которых вы ведёте, и доски или проекты, где живёт их работа.',
+            )}
           </div>
         </div>
         <button type="button" className="primary" onClick={() => setEditing('new')}>
-          New team
+          {t('New team', 'Новая команда')}
         </button>
       </header>
 
       {metaError && (
-        <Callout tone="warning" title="Boards and projects could not be listed">
+        <Callout tone="warning" title={t('Boards and projects could not be listed', 'Не удалось получить список досок и проектов')}>
           {metaError}
         </Callout>
       )}
@@ -81,12 +98,15 @@ export default function TeamsPage() {
       )}
 
       {teams.length === 0 && !editing && (
-        <EmptyState title="No teams yet">
+        <EmptyState title={t('No teams yet', 'Команд пока нет')}>
           <span>
-            Create one team to start. You can add more later and compare them side by side on a dashboard.
+            {t(
+              'Create one team to start. You can add more later and compare them side by side on a dashboard.',
+              'Создайте одну команду, чтобы начать. Позже можно добавить ещё и сравнивать их на дашборде.',
+            )}
           </span>
           <button type="button" className="primary" onClick={() => setEditing('new')}>
-            Create the first team
+            {t('Create the first team', 'Создать первую команду')}
           </button>
         </EmptyState>
       )}
@@ -95,14 +115,17 @@ export default function TeamsPage() {
         <Card
           key={team.id}
           title={team.name}
-          caption={`${team.members.length} people · ${team.boards.length} boards · ${team.projects.length} projects`}
+          caption={t(
+            `${team.members.length} people · ${team.boards.length} boards · ${team.projects.length} projects`,
+            `${team.members.length} людей · ${team.boards.length} досок · ${team.projects.length} проектов`,
+          )}
           actions={
             <div className="row">
               <button type="button" onClick={() => setEditing(team)}>
-                Edit
+                {t('Edit', 'Изменить')}
               </button>
               <button type="button" className="danger" onClick={() => remove(team)}>
-                Delete
+                {t('Delete', 'Удалить')}
               </button>
             </div>
           }
@@ -133,7 +156,7 @@ export default function TeamsPage() {
             )}
             {team.extraJql && (
               <div>
-                <span className="caption">Extra JQL filter</span>
+                <span className="caption">{t('Extra JQL filter', 'Дополнительный фильтр JQL')}</span>
                 <pre className="mono" style={{ margin: '3px 0 0' }}>
                   {team.extraJql}
                 </pre>
@@ -157,6 +180,7 @@ function TeamEditor({
   onCancel: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState(team?.name ?? '');
   const [boards, setBoards] = useState<TeamBoard[]>(team?.boards ?? []);
   const [projects, setProjects] = useState<string[]>(team?.projects ?? []);
@@ -201,14 +225,14 @@ function TeamEditor({
         `/api/jira/users?query=${encodeURIComponent(query)}`,
       );
       setCandidates(payload.users);
-      if (payload.users.length === 0) setSearchNote('Jira returned no users for that search.');
+      if (payload.users.length === 0) setSearchNote(t('Jira returned no users for that search.', 'Jira не нашла пользователей по этому запросу.'));
     } catch (caught) {
       setSearchNote(errorMessage(caught));
       setCandidates([]);
     } finally {
       setSearching(false);
     }
-  }, [query]);
+  }, [query, t]);
 
   const detectFromBoards = async () => {
     setSearching(true);
@@ -227,10 +251,18 @@ function TeamEditor({
       setCandidates(users);
       setSearchNote(
         users.length === 0
-          ? 'No assignees were found on the selected boards in the last 90 days.'
-          : `${users.length} people have had work on the selected boards in the last 90 days.${
-              truncated ? ' One of the boards has more work than a single scan covers, so this list may be short a few names.' : ''
-            }`,
+          ? t(
+              'No assignees were found on the selected boards in the last 90 days.',
+              'На выбранных досках за последние 90 дней исполнители не найдены.',
+            )
+          : t(
+              `${users.length} people have had work on the selected boards in the last 90 days.${
+                truncated ? ' One of the boards has more work than a single scan covers, so this list may be short a few names.' : ''
+              }`,
+              `${users.length} человек имели работу на выбранных досках за последние 90 дней.${
+                truncated ? ' На одной из досок работы больше, чем покрывает один проход, поэтому в списке может не хватать нескольких имён.' : ''
+              }`,
+            ),
       );
     } catch (caught) {
       setSearchNote(errorMessage(caught));
@@ -258,11 +290,14 @@ function TeamEditor({
 
   return (
     <Card
-      title={team ? `Edit ${team.name}` : 'New team'}
-      caption="Boards give the most accurate scope. Projects are wider. Members alone means everything assigned to them."
+      title={team ? t(`Edit ${team.name}`, `Изменить ${team.name}`) : t('New team', 'Новая команда')}
+      caption={t(
+        'Boards give the most accurate scope. Projects are wider. Members alone means everything assigned to them.',
+        'Доски дают самую точную область. Проекты шире. Одни только люди означают всё, что на них назначено.',
+      )}
     >
       <div className="stack">
-        <Field label="Team name">
+        <Field label={t('Team name', 'Название команды')}>
           <input
             type="text"
             value={name}
@@ -273,7 +308,7 @@ function TeamEditor({
 
         <div>
           <span className="field-label" style={{ fontSize: 12 }}>
-            Boards ({boards.length} selected)
+            {t(`Boards (${boards.length} selected)`, `Доски (выбрано ${boards.length})`)}
           </span>
           <div className="checklist" style={{ marginTop: 4 }}>
             {meta.boards.map((board) => (
@@ -287,7 +322,7 @@ function TeamEditor({
 
         <div>
           <span className="field-label" style={{ fontSize: 12 }}>
-            Projects ({projects.length} selected)
+            {t(`Projects (${projects.length} selected)`, `Проекты (выбрано ${projects.length})`)}
           </span>
           <div className="checklist" style={{ marginTop: 4 }}>
             {meta.projects.map((project) => (
@@ -307,7 +342,7 @@ function TeamEditor({
 
         <div className="stack" style={{ gap: 6 }}>
           <span className="field-label" style={{ fontSize: 12 }}>
-            People ({members.length} selected)
+            {t(`People (${members.length} selected)`, `Люди (выбрано ${members.length})`)}
           </span>
           {members.length > 0 && (
             <div className="row" style={{ gap: 5 }}>
@@ -317,7 +352,7 @@ function TeamEditor({
                   type="button"
                   className="subtle"
                   onClick={() => setMembers(members.filter((entry) => entry.id !== member.id))}
-                  title="Remove from team"
+                  title={t('Remove from team', 'Убрать из команды')}
                 >
                   <Pill tone={member.active === false ? 'danger' : 'neutral'}>{member.displayName} ×</Pill>
                 </button>
@@ -328,7 +363,7 @@ function TeamEditor({
             <input
               type="text"
               value={query}
-              placeholder="Search Jira users by name or email"
+              placeholder={t('Search Jira users by name or email', 'Искать пользователей Jira по имени или email')}
               style={{ maxWidth: 320 }}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
@@ -339,12 +374,12 @@ function TeamEditor({
               }}
             />
             <button type="button" onClick={searchUsers} disabled={searching}>
-              Search users
+              {t('Search users', 'Искать пользователей')}
             </button>
             <button type="button" onClick={detectFromBoards} disabled={searching || boards.length === 0}>
-              Detect from selected boards
+              {t('Detect from selected boards', 'Найти по выбранным доскам')}
             </button>
-            {searching && <Spinner label="Asking Jira" />}
+            {searching && <Spinner label={t('Asking Jira', 'Спрашиваю Jira')} />}
           </div>
           {searchNote && <span className="caption">{searchNote}</span>}
           {candidates.length > 0 && (
@@ -354,21 +389,26 @@ function TeamEditor({
                   <input type="checkbox" checked={memberIds.has(user.id)} onChange={() => toggleMember(user)} />
                   <span title={user.email ?? user.id}>
                     {user.displayName}
-                    {user.active ? '' : ' (inactive)'}
+                    {user.active ? '' : t(' (inactive)', ' (неактивен)')}
                   </span>
                 </label>
               ))}
             </div>
           )}
           <span className="caption">
-            User search needs browse-users permission on many sites. If it returns nothing, detect people from the
-            boards instead.
+            {t(
+              'User search needs browse-users permission on many sites. If it returns nothing, detect people from the boards instead.',
+              'Поиск пользователей на многих сайтах требует права browse-users. Если он ничего не вернул, найдите людей по доскам.',
+            )}
           </span>
         </div>
 
         <Field
-          label="Extra JQL filter (optional)"
-          hint="ANDed onto every query for this team. Useful to exclude a component or issue type."
+          label={t('Extra JQL filter (optional)', 'Дополнительный фильтр JQL (необязательно)')}
+          hint={t(
+            'ANDed onto every query for this team. Useful to exclude a component or issue type.',
+            'Добавляется через AND к каждому запросу команды. Удобно, чтобы исключить компонент или тип задачи.',
+          )}
         >
           <textarea
             value={extraJql}
@@ -379,7 +419,10 @@ function TeamEditor({
 
         {!hasScope && (
           <Callout tone="warning">
-            Add at least one board, project or person. Without a scope there is nothing to query.
+            {t(
+              'Add at least one board, project or person. Without a scope there is nothing to query.',
+              'Добавьте хотя бы одну доску, проект или человека. Без области запрашивать нечего.',
+            )}
           </Callout>
         )}
 
@@ -387,10 +430,10 @@ function TeamEditor({
 
         <div className="row">
           <button type="button" className="primary" onClick={save} disabled={saving || !name.trim() || !hasScope}>
-            {saving ? 'Saving…' : team ? 'Save team' : 'Create team'}
+            {saving ? t('Saving…', 'Сохраняю…') : team ? t('Save team', 'Сохранить команду') : t('Create team', 'Создать команду')}
           </button>
           <button type="button" onClick={onCancel}>
-            Cancel
+            {t('Cancel', 'Отмена')}
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { CycleTimeBarChart } from '@frontend/components/charts';
 import { RequireSetup } from '@frontend/components/Guards';
+import { useI18n } from '@frontend/i18n/locale';
 import { Card, ErrorNotice, LoadingCards, Modal, Segmented, SnapshotBar } from '@frontend/components/ui';
 import { apiDelete, apiGet, apiPut, errorMessage } from '@frontend/lib/api';
 import { useAppData } from '@frontend/lib/app-data';
@@ -60,6 +61,7 @@ export default function OverviewPage() {
 }
 
 function TeamOverview() {
+  const { t } = useI18n();
   const { teams, rules } = useAppData();
   const [teamIds, setTeamIds] = useState<string[]>(() => (teams[0] ? [teams[0].id] : []));
   const [sprints, setSprints] = useState<JiraSprintOption[]>([]);
@@ -456,17 +458,20 @@ function TeamOverview() {
     <div className="stack">
       <header className="page-header">
         <div className="page-header-meta">
-          <h1>Team Overview</h1>
+          <h1>{t('Team Overview', 'Обзор команды')}</h1>
           <div className="page-header-sub">
-            Cycle time по выбранным статусам. Считаются только Bug, Task, Story и Spike.
+            {t(
+              'Cycle time for the selected statuses. Only Bug, Task, Story, and Spike are counted.',
+              'Cycle time по выбранным статусам. Считаются только Bug, Task, Story и Spike.',
+            )}
           </div>
         </div>
       </header>
 
       <div className="row">
         <CheckDropdown
-          label="Teams"
-          summary={teamSummary(teams, teamIds)}
+          label={t('Teams', 'Команды')}
+          summary={teamSummary(teams, teamIds, t)}
           disabled={busy && teamIds.length === 0}
         >
           {teams.map((team) => (
@@ -483,11 +488,11 @@ function TeamOverview() {
         </CheckDropdown>
 
         <CheckDropdown
-          label="Sprints"
-          summary={sprintSummary(sprints, sprintIds)}
+          label={t('Sprints', 'Спринты')}
+          summary={sprintSummary(sprints, sprintIds, t)}
           disabled={sprintsLoading}
         >
-          {sprints.length === 0 && <span className="caption">No sprints on the selected boards.</span>}
+          {sprints.length === 0 && <span className="caption">{t('No sprints on the selected boards.', 'На выбранных досках нет спринтов.')}</span>}
           {sprints.map((sprint) => (
             <label key={sprint.id}>
               <input
@@ -534,7 +539,7 @@ function TeamOverview() {
       {busy && issues.length === 0 && <LoadingCards count={1} />}
 
       {(!busy || issues.length > 0) && (
-        <Card title="Cycle time">
+        <Card title={t('Cycle time', 'Cycle time')}>
           <div className="cycle-toolbar">
             <CycleDefinition
               statuses={statuses}
@@ -551,11 +556,11 @@ function TeamOverview() {
               }}
             />
             <CheckDropdown
-              label="Сравнить с"
-              summary={compareSummary(sprints, compareSprintIds)}
+              label={t('Compare with', 'Сравнить с')}
+              summary={compareSummary(sprints, compareSprintIds, t)}
               disabled={sprintsLoading || sprints.length === 0}
             >
-              {sprints.length === 0 && <span className="caption">No sprints on the selected boards.</span>}
+              {sprints.length === 0 && <span className="caption">{t('No sprints on the selected boards.', 'На выбранных досках нет спринтов.')}</span>}
               {sprints.map((sprint) => (
                 <label key={sprint.id}>
                   <input
@@ -573,14 +578,14 @@ function TeamOverview() {
                     {sprint.name}
                     {sprint.startDate ? ` · ${sprint.startDate.slice(0, 10)}` : ''}
                     {sprint.endDate ? `–${sprint.endDate.slice(0, 10)}` : ''}
-                    {sprintIds.includes(sprint.id) ? ' · выбран' : ''}
+                    {sprintIds.includes(sprint.id) ? t(' · selected', ' · выбран') : ''}
                   </span>
                 </label>
               ))}
             </CheckDropdown>
             <CheckDropdown
-              label="Люди"
-              summary={personSummary(people, assigneeIds)}
+              label={t('People', 'Люди')}
+              summary={personSummary(people, assigneeIds, t)}
               disabled={people.length === 0}
             >
               <label>
@@ -593,7 +598,7 @@ function TeamOverview() {
                     writeStoredIds(PEOPLE_STORAGE, []);
                   }}
                 />
-                <span>Все</span>
+                <span>{t('All', 'Все')}</span>
               </label>
               {people.map((person) => (
                 <label key={person.id}>
@@ -613,8 +618,8 @@ function TeamOverview() {
             <Segmented<'calendar' | 'working'>
               value={workingDays ? 'working' : 'calendar'}
               options={[
-                { value: 'calendar', label: 'Календарные' },
-                { value: 'working', label: 'Рабочие' },
+                { value: 'calendar', label: t('Calendar', 'Календарные') },
+                { value: 'working', label: t('Working', 'Рабочие') },
               ]}
               onChange={(value) => {
                 const next = value === 'working';
@@ -623,22 +628,22 @@ function TeamOverview() {
               }}
             />
             <button type="button" className="cycle-toolbar-btn" onClick={() => setHolidaysOpen(true)}>
-              Праздники ({holidays.length})
+              {t('Holidays', 'Праздники')} ({holidays.length})
             </button>
             <button type="button" className="cycle-toolbar-btn" onClick={() => setExcludeOpen(true)}>
-              Исключения ({excludedKeys.length})
+              {t('Exclusions', 'Исключения')} ({excludedKeys.length})
             </button>
             <button type="button" className="cycle-toolbar-btn" onClick={() => setOverrideOpen(true)}>
-              Override ({overrides.length})
+              {t('Date override', 'Override дат')} ({overrides.length})
             </button>
           </div>
           {!window ? (
-            <span className="caption">Pick at least one sprint.</span>
+            <span className="caption">{t('Pick at least one sprint.', 'Выберите хотя бы один спринт.')}</span>
           ) : (
             <CycleTimeSection
               cycle={cycle}
               endStatus={endStatus}
-              compareLabel={compareSprintIds.length > 0 ? compareSummary(sprints, compareSprintIds) : undefined}
+              compareLabel={compareSprintIds.length > 0 ? compareSummary(sprints, compareSprintIds, t) : undefined}
               compare={compareCycle}
               compareLoading={compareLoading}
               onExclude={addExcluded}
@@ -681,16 +686,16 @@ function TeamOverview() {
 
       {(!bugsLoading || bugIssues.length > 0) && (
         <Card
-          title="Баги"
-          caption="Открытые баги выбранной команды, без спринта."
+          title={t('Bugs', 'Баги')}
+          caption={t('Open bugs for the selected team, not limited to a sprint.', 'Открытые баги выбранной команды, без спринта.')}
           actions={
             <div className="bug-list-actions">
               <CheckDropdown
-                label="Исключить статусы"
-                summary={excludeStatusSummary(excludeBugStatuses)}
+                label={t('Exclude statuses', 'Исключить статусы')}
+                summary={excludeStatusSummary(excludeBugStatuses, t)}
                 disabled={statusesLoading && bugStatusOptions.length === 0}
               >
-                {bugStatusOptions.length === 0 && <span className="caption">Нет статусов.</span>}
+                {bugStatusOptions.length === 0 && <span className="caption">{t('No statuses.', 'Нет статусов.')}</span>}
                 {bugStatusOptions.map((status) => (
                   <label key={status}>
                     <input
@@ -717,7 +722,7 @@ function TeamOverview() {
                     writeStoredFlag(BUG_BACKLOG_STORAGE, event.target.checked);
                   }}
                 />
-                <span>С бэклогом</span>
+                <span>{t('Include backlog', 'С бэклогом')}</span>
               </label>
             </div>
           }
@@ -749,9 +754,10 @@ function CycleDefinition({
   onStart: (value: string) => void;
   onEnd: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="cycle-def">
-      <span>первый переход в</span>
+      <span>{t('first transition into', 'первый переход в')}</span>
       <StatusSelect
         statuses={statuses}
         value={startStatus}
@@ -759,7 +765,7 @@ function CycleDefinition({
         onChange={onStart}
         fallback={DEFAULT_CYCLE_START_STATUS}
       />
-      <span>→ первый переход в</span>
+      <span>{t('→ first transition into', '→ первый переход в')}</span>
       <StatusSelect
         statuses={statuses}
         value={endStatus}
@@ -822,34 +828,36 @@ function CycleTimeSection({
   onExclude: (keys: string[]) => void;
   onPrefillOverride: (key: string) => void;
 }) {
+  const { t } = useI18n();
+  const loadingCompare = { text: t('loading…', 'загрузка…'), short: t('loading…', 'загрузка…'), tone: 'neutral' as const };
   const medianCompare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.median, compare?.median ?? null, compareLabel)
     : undefined;
   const medianDevCompare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.medianWithoutQa, compare?.medianWithoutQa ?? null, compareLabel)
     : undefined;
   const medianQaCompare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.medianQa, compare?.medianQa ?? null, compareLabel)
     : undefined;
   const p85Compare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.p85, compare?.p85 ?? null, compareLabel)
     : undefined;
   const p85DevCompare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.p85WithoutQa, compare?.p85WithoutQa ?? null, compareLabel)
     : undefined;
   const p85QaCompare = compareLabel
     ? compareLoading
-      ? { text: 'загрузка…', short: 'загрузка…', tone: 'neutral' as const }
+      ? loadingCompare
       : formatCycleCompare(cycle.p85Qa, compare?.p85Qa ?? null, compareLabel)
     : undefined;
 
@@ -869,7 +877,17 @@ function CycleTimeSection({
                 key={card.label}
                 className={`stat${compared?.tone && compared.tone !== 'neutral' ? ` tone-${compared.tone}` : ''}`}
               >
-                <span className="stat-label">{card.label}</span>
+                <span className="stat-label">
+                  {card.label === 'Done'
+                    ? t('Done', 'Завершено')
+                    : card.label === 'Median CT'
+                      ? t('Median CT', 'Медиана CT')
+                      : card.label === 'P85 CT'
+                        ? t('P85 CT', 'P85 CT')
+                        : card.label === 'WIP'
+                          ? t('WIP', 'WIP')
+                          : card.label}
+                </span>
                 <span className="stat-value">{card.value}</span>
                 {compared && (
                   <span className={`stat-compare tone-${compared.tone}`}>{compared.text}</span>
@@ -893,7 +911,9 @@ function CycleTimeSection({
                           className={`stat-split${split.label === 'QA' ? ' stat-split-qa' : ' stat-split-dev'}`}
                           title={split.hint}
                         >
-                          <span className="stat-split-label">{split.label}</span>
+                          <span className="stat-split-label">
+                            {split.label === 'without QA' ? t('without QA', 'без QA') : split.label === 'QA' ? t('QA', 'QA') : split.label}
+                          </span>
                           <span className="stat-split-value">{split.value}</span>
                           {splitCompared && (
                             <span className={`stat-split-compare tone-${splitCompared.tone}`}>
@@ -921,7 +941,10 @@ function CycleTimeSection({
             onOverrideStart={onPrefillOverride}
           />
         ) : (
-          <div className="empty">{cycle.emptyMessage ?? CYCLE_EMPTY_MESSAGE}</div>
+          <div className="empty">
+            {cycle.emptyMessage ??
+              t(CYCLE_EMPTY_MESSAGE, 'В этом спринте ещё нет задач, переданных на проверку')}
+          </div>
         )}
       </div>
       <div className="cycle-side">
@@ -948,10 +971,14 @@ function ExcludeDialog({
   onSubmit: () => void;
   onRestore: (key: string) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <Modal open={open} title="Исключения" onClose={onClose}>
+    <Modal open={open} title={t('Exclusions', 'Исключения')} onClose={onClose}>
       <p className="caption">
-        Не входят в Median CT, P85 CT, Завершено, WIP, график и Oldest WIP. × на полосе тоже убирает задачу.
+        {t(
+          'Left out of Median CT, P85 CT, Done, WIP, the chart, and Oldest WIP. × on a bar also removes the issue.',
+          'Не входят в Median CT, P85 CT, Завершено, WIP, график и Oldest WIP. × на полосе тоже убирает задачу.',
+        )}
       </p>
       <form
         className="cycle-exclude-form"
@@ -964,22 +991,22 @@ function ExcludeDialog({
           type="text"
           value={draft}
           placeholder="CDR-2029, CDR-2038"
-          aria-label="Ключи задач для исключения"
+          aria-label={t('Issue keys to exclude', 'Ключи задач для исключения')}
           onChange={(event) => onDraft(event.target.value)}
         />
         <button type="submit" className="cycle-exclude-add" disabled={!parseIssueKeys(draft).length}>
-          Добавить
+          {t('Add', 'Добавить')}
         </button>
       </form>
       {keys.length === 0 ? (
-        <p className="caption">Пока пусто.</p>
+        <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
       ) : (
         <ul className="cycle-exclude-list">
           {keys.map((key) => (
             <li key={key}>
               <span className="cycle-chart-key">{key}</span>
               <button type="button" className="cycle-exclude-restore" onClick={() => onRestore(key)}>
-                вернуть
+                {t('restore', 'вернуть')}
               </button>
             </li>
           ))}
@@ -1014,12 +1041,15 @@ function OverrideDialog({
   onSave: () => void;
   onRemove: (key: string, field?: 'start' | 'end') => void;
 }) {
+  const { t } = useI18n();
   const canSave = parseIssueKeys(keyDraft).length === 1 && Boolean(startDraft || endDraft);
   return (
-    <Modal open={open} title="Override дат" onClose={onClose}>
+    <Modal open={open} title={t('Date override', 'Override дат')} onClose={onClose}>
       <p className="caption">
-        Подменяет старт и/или конец для Median CT, P85 CT и графика. Окно спринта, Oldest WIP и WIP не меняются.
-        Пустое поле при сохранении не затирает вторую дату.
+        {t(
+          'Replaces the start and/or end for Median CT, P85 CT, and the chart. The sprint window, Oldest WIP, and WIP stay the same. An empty field does not clear the other date.',
+          'Подменяет старт и/или конец для Median CT, P85 CT и графика. Окно спринта, Oldest WIP и WIP не меняются. Пустое поле при сохранении не затирает вторую дату.',
+        )}
       </p>
       <form
         className="cycle-override-form"
@@ -1032,33 +1062,33 @@ function OverrideDialog({
           type="text"
           value={keyDraft}
           placeholder="CDR-2029"
-          aria-label="Ключ задачи для override дат"
+          aria-label={t('Issue key for the date override', 'Ключ задачи для override дат')}
           onChange={(event) => onKeyDraft(event.target.value)}
         />
         <label className="cycle-override-field">
-          <span className="caption">Старт</span>
+          <span className="caption">{t('Start', 'Старт')}</span>
           <input
             type="datetime-local"
             value={startDraft}
-            aria-label="Новый старт cycle time"
+            aria-label={t('New cycle time start', 'Новый старт cycle time')}
             onChange={(event) => onStartDraft(event.target.value)}
           />
         </label>
         <label className="cycle-override-field">
-          <span className="caption">Конец</span>
+          <span className="caption">{t('End', 'Конец')}</span>
           <input
             type="datetime-local"
             value={endDraft}
-            aria-label="Новый конец cycle time"
+            aria-label={t('New cycle time end', 'Новый конец cycle time')}
             onChange={(event) => onEndDraft(event.target.value)}
           />
         </label>
         <button type="submit" className="cycle-exclude-add" disabled={!canSave}>
-          Сохранить
+          {t('Save', 'Сохранить')}
         </button>
       </form>
       {rows.length === 0 ? (
-        <p className="caption">Пока пусто.</p>
+        <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
       ) : (
         <ul className="cycle-exclude-list">
           {rows.map((row) => (
@@ -1067,24 +1097,28 @@ function OverrideDialog({
                 <span className="cycle-chart-key">{row.key}</span>
                 <span className="oldest-wip-meta">
                   {' '}
-                  {row.startedAt ? `старт ${formatOverrideStamp(row.startedAt)}` : 'старт —'}
+                  {row.startedAt
+                    ? t(`start ${formatOverrideStamp(row.startedAt)}`, `старт ${formatOverrideStamp(row.startedAt)}`)
+                    : t('start —', 'старт —')}
                   {' · '}
-                  {row.endedAt ? `конец ${formatOverrideStamp(row.endedAt)}` : 'конец —'}
+                  {row.endedAt
+                    ? t(`end ${formatOverrideStamp(row.endedAt)}`, `конец ${formatOverrideStamp(row.endedAt)}`)
+                    : t('end —', 'конец —')}
                 </span>
               </span>
               <span className="cycle-override-actions">
                 {row.startedAt && (
                   <button type="button" className="cycle-exclude-restore" onClick={() => onRemove(row.key, 'start')}>
-                    старт
+                    {t('start', 'старт')}
                   </button>
                 )}
                 {row.endedAt && (
                   <button type="button" className="cycle-exclude-restore" onClick={() => onRemove(row.key, 'end')}>
-                    конец
+                    {t('end', 'конец')}
                   </button>
                 )}
                 <button type="button" className="cycle-exclude-restore" onClick={() => onRemove(row.key)}>
-                  сбросить
+                  {t('reset', 'сбросить')}
                 </button>
               </span>
             </li>
@@ -1112,11 +1146,14 @@ function HolidaysDialog({
   onSubmit: () => void;
   onRestore: (day: string) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <Modal open={open} title="Праздники" onClose={onClose}>
+    <Modal open={open} title={t('Holidays', 'Праздники')} onClose={onClose}>
       <p className="caption">
-        Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список не копируется на другие
-        годы.
+        {t(
+          'These dates are not counted in Working mode. Saturday and Sunday are already excluded. The list is not copied to other years.',
+          'Эти даты не считаются в режиме «Рабочие». Суббота и воскресенье уже исключены. Список не копируется на другие годы.',
+        )}
       </p>
       <form
         className="cycle-exclude-form"
@@ -1128,22 +1165,22 @@ function HolidaysDialog({
         <input
           type="date"
           value={draft}
-          aria-label="Дата праздника"
+          aria-label={t('Holiday date', 'Дата праздника')}
           onChange={(event) => onDraft(event.target.value)}
         />
         <button type="submit" className="cycle-exclude-add" disabled={!/^\d{4}-\d{2}-\d{2}$/.test(draft)}>
-          Добавить
+          {t('Add', 'Добавить')}
         </button>
       </form>
       {days.length === 0 ? (
-        <p className="caption">Пока пусто.</p>
+        <p className="caption">{t('Nothing yet.', 'Пока пусто.')}</p>
       ) : (
         <ul className="cycle-exclude-list">
           {days.map((day) => (
             <li key={day}>
               <span className="cycle-chart-key">{day}</span>
               <button type="button" className="cycle-exclude-restore" onClick={() => onRestore(day)}>
-                сбросить
+                {t('reset', 'сбросить')}
               </button>
             </li>
           ))}
@@ -1154,11 +1191,12 @@ function HolidaysDialog({
 }
 
 function OldestWipPanel({ items }: { items: OldestWipItem[] }) {
+  const { t } = useI18n();
   return (
     <aside className="cycle-exclude">
-      <div className="cycle-exclude-title">Oldest WIP</div>
+      <div className="cycle-exclude-title">{t('Oldest WIP', 'Самый старый WIP')}</div>
       {items.length === 0 ? (
-        <p className="caption">Нет задач в разработке или Ready to QA.</p>
+        <p className="caption">{t('No issues in development or Ready to QA.', 'Нет задач в разработке или Ready to QA.')}</p>
       ) : (
         <ul className="oldest-wip-list">
           {items.map((item) => (
@@ -1192,16 +1230,17 @@ function BugListPanel({
   includeBacklog: boolean;
   excludingStatuses: boolean;
 }) {
+  const { t } = useI18n();
   const [ageSort, setAgeSort] = useState<BugAgeSort>('oldest');
   const rows = useMemo(() => sortBugsByAge(items, ageSort), [items, ageSort]);
   if (items.length === 0) {
     return (
       <p className="caption">
         {excludingStatuses
-          ? 'Нет открытых багов с выбранными фильтрами.'
+          ? t('No open bugs with the selected filters.', 'Нет открытых багов с выбранными фильтрами.')
           : includeBacklog
-            ? 'Нет открытых багов.'
-            : 'Нет открытых багов вне бэклога.'}
+            ? t('No open bugs.', 'Нет открытых багов.')
+            : t('No open bugs outside the backlog.', 'Нет открытых багов вне бэклога.')}
       </p>
     );
   }
@@ -1212,21 +1251,21 @@ function BugListPanel({
         <table className="data">
           <thead>
             <tr>
-              <th>Ключ</th>
-              <th>Название</th>
-              <th>Приоритет</th>
+              <th>{t('Key', 'Ключ')}</th>
+              <th>{t('Summary', 'Название')}</th>
+              <th>{t('Priority', 'Приоритет')}</th>
               <th className="num">SP</th>
-              <th>Статус</th>
-              <th>Автор</th>
-              <th>Исполнитель</th>
-              <th>Создан</th>
+              <th>{t('Status', 'Статус')}</th>
+              <th>{t('Reporter', 'Автор')}</th>
+              <th>{t('Assignee', 'Исполнитель')}</th>
+              <th>{t('Created', 'Создан')}</th>
               <th className="num" aria-sort={newestFirst ? 'ascending' : 'descending'}>
                 <button
                   type="button"
                   className="bug-sort"
                   onClick={() => setAgeSort(newestFirst ? 'oldest' : 'newest')}
                 >
-                  Возраст {newestFirst ? '↑' : '↓'}
+                  {t('Age', 'Возраст')} {newestFirst ? '↑' : '↓'}
                 </button>
               </th>
             </tr>
@@ -1256,7 +1295,7 @@ function BugListPanel({
           </tbody>
         </table>
       </div>
-      {truncated && <p className="caption">Список обрезан лимитом ответа Jira.</p>}
+      {truncated && <p className="caption">{t('The list was truncated by the Jira response limit.', 'Список обрезан лимитом ответа Jira.')}</p>}
     </div>
   );
 }
@@ -1288,42 +1327,44 @@ function toggle<T>(current: T[], value: T, locked: boolean): T[] {
   return [...current, value];
 }
 
-function teamSummary(teams: Team[], ids: string[]): string {
-  if (ids.length === 0) return 'Select teams';
-  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? '1 team';
-  return `${ids.length} teams`;
+type Tr = (en: string, ru: string) => string;
+
+function teamSummary(teams: Team[], ids: string[], t: Tr): string {
+  if (ids.length === 0) return t('Select teams', 'Выберите команды');
+  if (ids.length === 1) return teams.find((team) => team.id === ids[0])?.name ?? t('1 team', '1 команда');
+  return t(`${ids.length} teams`, ruCount(ids.length, 'команда', 'команды', 'команд'));
 }
 
-function sprintSummary(sprints: JiraSprintOption[], ids: number[]): string {
-  if (ids.length === 0) return 'Select sprints';
-  if (ids.length === 1) return sprints.find((sprint) => sprint.id === ids[0])?.name ?? '1 sprint';
-  return `${ids.length} sprints`;
+function sprintSummary(sprints: JiraSprintOption[], ids: number[], t: Tr): string {
+  if (ids.length === 0) return t('Select sprints', 'Выберите спринты');
+  if (ids.length === 1) return sprints.find((sprint) => sprint.id === ids[0])?.name ?? t('1 sprint', '1 спринт');
+  return t(`${ids.length} sprints`, ruCount(ids.length, 'спринт', 'спринта', 'спринтов'));
 }
 
-function excludeStatusSummary(names: string[]): string {
-  if (names.length === 0) return 'Не исключать';
+function excludeStatusSummary(names: string[], t: Tr): string {
+  if (names.length === 0) return t('None excluded', 'Не исключать');
   if (names.length === 1) return names[0];
-  const n10 = names.length % 10;
-  const n100 = names.length % 100;
-  if (n10 === 1 && n100 !== 11) return `${names.length} статус`;
-  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return `${names.length} статуса`;
-  return `${names.length} статусов`;
+  return t(`${names.length} statuses`, ruCount(names.length, 'статус', 'статуса', 'статусов'));
 }
 
-function compareSummary(sprints: JiraSprintOption[], ids: number[]): string {
-  if (ids.length === 0) return 'Не сравнивать';
-  if (ids.length === 1) return sprints.find((sprint) => sprint.id === ids[0])?.name ?? '1 спринт';
-  const n10 = ids.length % 10;
-  const n100 = ids.length % 100;
-  if (n10 === 1 && n100 !== 11) return `${ids.length} спринт`;
-  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return `${ids.length} спринта`;
-  return `${ids.length} спринтов`;
+function compareSummary(sprints: JiraSprintOption[], ids: number[], t: Tr): string {
+  if (ids.length === 0) return t('Do not compare', 'Не сравнивать');
+  if (ids.length === 1) return sprints.find((sprint) => sprint.id === ids[0])?.name ?? t('1 sprint', '1 спринт');
+  return t(`${ids.length} sprints`, ruCount(ids.length, 'спринт', 'спринта', 'спринтов'));
 }
 
-function personSummary(people: CyclePerson[], ids: string[]): string {
-  if (ids.length === 0 || ids.length === people.length) return 'Все';
-  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? '1 чел.';
-  return `${ids.length} чел.`;
+function personSummary(people: CyclePerson[], ids: string[], t: Tr): string {
+  if (ids.length === 0 || ids.length === people.length) return t('All', 'Все');
+  if (ids.length === 1) return people.find((person) => person.id === ids[0])?.name ?? t('1 person', '1 чел.');
+  return t(`${ids.length} people`, `${ids.length} чел.`);
+}
+
+function ruCount(count: number, one: string, few: string, many: string): string {
+  const n10 = count % 10;
+  const n100 = count % 100;
+  if (n10 === 1 && n100 !== 11) return `${count} ${one}`;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return `${count} ${few}`;
+  return `${count} ${many}`;
 }
 
 function sprintWindow(sprints: JiraSprintOption[]): { from: string; to: string; days: number } | undefined {

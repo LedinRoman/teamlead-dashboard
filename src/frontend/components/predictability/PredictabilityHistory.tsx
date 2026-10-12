@@ -1,6 +1,7 @@
+import { useI18n } from '@frontend/i18n/locale';
 import { Hint } from '@frontend/components/ui';
 import { formatStoryPoints } from '@backend/metrics/cycle-overview';
-import { METRIC_HINTS } from '@backend/metrics/predictability-copy';
+import { metricHints } from '@backend/metrics/predictability-copy';
 import type { PredictabilityHistoryRow } from '@backend/metrics/predictability-model';
 
 export function PredictabilityHistory({
@@ -14,32 +15,34 @@ export function PredictabilityHistory({
   requested?: number;
   used?: number;
 }) {
+  const { t, locale } = useI18n();
+  const hints = metricHints(locale);
   if (rows.length === 0) {
-    return <p className="caption">Нет предыдущих спринтов на досках команды.</p>;
+    return <p className="caption">{t('No earlier sprints on the team boards.', 'Нет предыдущих спринтов на досках команды.')}</p>;
   }
   const horizon =
     requested && used
       ? requested === used
-        ? `Последние ${used} спринтов досок.`
-        : `Запрошено ${requested}, на досках есть ${used}.`
+        ? t(`Last ${used} board sprints.`, `Последние ${used} спринтов досок.`)
+        : t(`Requested ${requested}, the boards have ${used}.`, `Запрошено ${requested}, на досках есть ${used}.`)
       : undefined;
   return (
     <div className="table-wrap">
       <table className="data">
         <thead>
           <tr>
-            <th>Спринт</th>
+            <th>{t('Sprint', 'Спринт')}</th>
             <th>
-              <Hint text={METRIC_HINTS.throughput}>Throughput</Hint>
+              <Hint text={hints.throughput}>{t('Throughput', 'Throughput')}</Hint>
             </th>
             <th>
-              <Hint text={METRIC_HINTS.scopeAdded}>Scope added</Hint>
+              <Hint text={hints.scopeAdded}>{t('Scope added', 'Добавленный scope')}</Hint>
             </th>
             <th>
-              <Hint text={METRIC_HINTS.scopeDrop}>Scope drop</Hint>
+              <Hint text={hints.scopeDrop}>{t('Scope drop', 'Снятый scope')}</Hint>
             </th>
             <th>
-              <Hint text={METRIC_HINTS.doneTotal}>Done total</Hint>
+              <Hint text={hints.doneTotal}>{t('Done total', 'Всего завершено')}</Hint>
             </th>
           </tr>
         </thead>
@@ -48,8 +51,8 @@ export function PredictabilityHistory({
             <tr key={row.sprintId} className={row.current ? 'is-current' : undefined}>
               <td>
                 {row.name}
-                {row.current ? ' · текущий' : ''}
-                {row.incomplete ? ' · неполный' : ''}
+                {row.current ? t(' · current', ' · текущий') : ''}
+                {row.incomplete ? t(' · incomplete', ' · неполный') : ''}
               </td>
               <td>{cell(row.throughputTasks, row.throughputSp, unit)}</td>
               <td>{cell(row.addedTasks, row.addedSp, unit, true)}</td>
@@ -60,8 +63,11 @@ export function PredictabilityHistory({
         </tbody>
       </table>
       <p className="caption">
-        {horizon} Throughput — первая Проверка в датах спринта. Done total — committed completed + added
-        completed. Scope drop — снято с поля Sprint, не spillover.
+        {horizon}{' '}
+        {t(
+          'Throughput is the first review inside the sprint dates. Done total is committed completed plus added completed. Scope drop is removed from the Sprint field, not spillover.',
+          'Throughput — первая Проверка в датах спринта. Done total — committed completed + added completed. Scope drop — снято с поля Sprint, не spillover.',
+        )}
       </p>
     </div>
   );

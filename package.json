@@ -19,7 +19,8 @@
     "check:postgres": "node scripts/check-postgres.mjs",
     "db:up": "node scripts/start-postgres.mjs",
     "db:migrate-sqlite": "node scripts/migrate-sqlite-to-pg.mjs",
-    "docker:up": "docker compose up --build"
+    "docker:up": "docker compose up --build",
+    "desktop": "node scripts/package-desktop.mjs"
   },
   "dependencies": {
     "next": "15.5.9",

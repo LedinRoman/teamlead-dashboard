@@ -1,3 +1,4 @@
+import { isRu, tr } from '../../shared/locale';
 import type { DistributionSummary, NormalizedIssue } from '@shared/types';
 import { summarize } from './aggregate';
 import {
@@ -290,11 +291,21 @@ export function formatCycleCompare(
   previous: number | null,
   previousLabel: string,
 ): CycleCompareLine | undefined {
-  const label = previousLabel.trim() || 'выбранный спринт';
-  if (previous === null) return { text: `нет данных · ${label}`, short: 'нет данных', tone: 'neutral' };
+  const label = previousLabel.trim() || tr('selected sprint', 'выбранный спринт');
+  if (previous === null) {
+    return {
+      text: tr(`no data · ${label}`, `нет данных · ${label}`),
+      short: tr('no data', 'нет данных'),
+      tone: 'neutral',
+    };
+  }
   if (current === null) return undefined;
   if (current === previous) {
-    return { text: `как ${label}: ${formatCycleDuration(previous)}`, short: 'как было', tone: 'neutral' };
+    return {
+      text: tr(`same as ${label}: ${formatCycleDuration(previous)}`, `как ${label}: ${formatCycleDuration(previous)}`),
+      short: tr('unchanged', 'как было'),
+      tone: 'neutral',
+    };
   }
   const improved = current < previous;
   const arrow = improved ? '↓' : '↑';
@@ -400,89 +411,115 @@ export function cycleSummaryCards(options: {
   qaWaitCount?: number;
 }): CycleSummaryCard[] {
   const qaWaitCount = options.qaWaitCount ?? 0;
+  const ru = isRu();
   const splits = (withoutQa: number | null, qa: number | null): CycleSummarySplit[] => [
     {
       label: 'without QA',
       value: formatCycleMetric(withoutQa),
-      hint: 'Development and other statuses, excluding Ready to QA',
+      hint: tr(
+        'Development and other statuses, excluding Ready to QA',
+        'Разработка и остальные статусы, без очереди Ready to QA',
+      ),
     },
     {
       label: 'QA',
       value: formatCycleMetric(qa),
       hint:
         qa === null
-          ? 'Time in Ready to QA before the first review'
+          ? tr('Time in Ready to QA before the first review', 'Время в Ready to QA до первой проверки')
           : qaWaitCount > 0
-            ? `Issues that waited in Ready to QA (${qaWaitCount})`
-            : 'Nobody waited in Ready to QA',
+            ? tr(
+                `Issues that waited in Ready to QA (${qaWaitCount})`,
+                `Задачи, которые ждали в Ready to QA (${qaWaitCount})`,
+              )
+            : tr('Nobody waited in Ready to QA', 'В Ready to QA никто не ждал'),
     },
   ];
   return [
     {
       label: 'Median CT',
       value: formatCycleMetric(options.median),
-      hint: 'Full cycle, including the QA queue',
+      hint: tr('Full cycle, including the QA queue', 'Полный цикл, включая очередь QA'),
       splits: splits(options.medianWithoutQa, options.medianQa),
     },
     {
       label: 'P85 CT',
       value: formatCycleMetric(options.p85),
-      hint: '85% of issues finished faster',
+      hint: tr('85% of issues finished faster', '85% задач завершились быстрее'),
       splits: splits(options.p85WithoutQa, options.p85Qa),
     },
     {
       label: 'Done',
       value: String(options.completedCount),
-      hint: `${options.completedInReview} in review · ${options.completedReleased} released`,
+      hint: ru
+        ? `${options.completedInReview} на проверке · ${options.completedReleased} выпущено`
+        : `${options.completedInReview} in review · ${options.completedReleased} released`,
     },
     {
       label: 'WIP',
       value: String(options.wipCount),
-      hint: `${options.devWipCount} in development · ${options.qaWipCount} in QA · ${options.todoCount} to do`,
+      hint: ru
+        ? `${options.devWipCount} в разработке · ${options.qaWipCount} в QA · ${options.todoCount} к выполнению`
+        : `${options.devWipCount} in development · ${options.qaWipCount} in QA · ${options.todoCount} to do`,
     },
   ];
 }
 
 function formatCycleMetric(value: number | null): string {
-  return value === null ? 'No data' : formatCycleDuration(value);
+  return value === null ? tr('No data', 'Нет данных') : formatCycleDuration(value);
 }
 
 export function cycleBarTooltip(bar: CycleBar, endStatus = ENGINEERING_DONE_STATUS): string {
   const lines = [
     bar.storyPoints === undefined ? bar.key : `${bar.key} · ${formatStoryPoints(bar.storyPoints)}`,
     bar.summary,
-    `Assignee: ${bar.assigneeName}`,
-    `Started: ${formatStamp(bar.firstInProgress)}`,
+    `${tr('Assignee', 'Исполнитель')}: ${bar.assigneeName}`,
+    `${tr('Started', 'Старт')}: ${formatStamp(bar.firstInProgress)}`,
   ];
   if (bar.startOverridden) {
-    lines.push(`Original start: ${formatStamp(bar.changelogStart)}`);
-    lines.push('Start override');
+    lines.push(`${tr('Original start', 'Исходный старт')}: ${formatStamp(bar.changelogStart)}`);
+    lines.push(tr('Start override', 'Override старта'));
   }
   lines.push(`${endStatus}: ${formatStamp(bar.doneAt)}`);
   if (bar.endOverridden) {
-    lines.push(`Original end: ${formatStamp(bar.changelogDone)}`);
-    lines.push('End override');
+    lines.push(`${tr('Original end', 'Исходный конец')}: ${formatStamp(bar.changelogDone)}`);
+    lines.push(tr('End override', 'Override конца'));
   }
-  lines.push(`Cycle time: ${formatCycleDuration(bar.cycleTimeDays)}`);
-  lines.push(`Development: ${formatCycleDuration(bar.devDays)}`);
+  lines.push(`${tr('Cycle time', 'Cycle time')}: ${formatCycleDuration(bar.cycleTimeDays)}`);
+  lines.push(`${tr('Development', 'Разработка')}: ${formatCycleDuration(bar.devDays)}`);
   lines.push(`QA WIP: ${formatCycleDuration(bar.qaWipDays)}`);
   return lines.join('\n');
 }
 
 function emptyMessage(endStatus: string): string {
-  if (endStatus === ENGINEERING_DONE_STATUS) return CYCLE_EMPTY_MESSAGE;
-  return `No issues in this sprint have reached “${endStatus}” yet`;
+  if (endStatus === ENGINEERING_DONE_STATUS) {
+    return tr(CYCLE_EMPTY_MESSAGE, 'В этом спринте ещё нет задач, переданных на проверку');
+  }
+  return tr(
+    `No issues in this sprint have reached “${endStatus}” yet`,
+    `В этом спринте ещё нет задач в статусе «${endStatus}»`,
+  );
+}
+
+function ruDayWord(shown: number): string {
+  if (!Number.isInteger(shown)) return 'дня';
+  const mod10 = shown % 10;
+  const mod100 = shown % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'день';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'дня';
+  return 'дней';
 }
 
 /** Display-only. Callers keep the exact day values for medians and bar lengths. */
 export function formatCycleDuration(days: number): string {
-  if (!(days > 0)) return '0 h';
+  const ru = isRu();
+  if (!(days > 0)) return ru ? '0 ч' : '0 h';
   if (days < 1) {
     const hours = Math.round(days * 24 * 10) / 10;
-    return `${formatShown(hours === 0 ? 0.1 : hours)} h`;
+    return `${formatShown(hours === 0 ? 0.1 : hours)} ${ru ? 'ч' : 'h'}`;
   }
   const shown = Math.round(days * 10) / 10;
-  return `${formatShown(shown)} ${shown === 1 ? 'day' : 'days'}`;
+  return `${formatShown(shown)} ${ru ? ruDayWord(shown) : shown === 1 ? 'day' : 'days'}`;
 }
 
 export function formatStoryPoints(value: number): string {
@@ -559,6 +596,21 @@ export function cycleQaWipDays(
   }
   if (toMs > cursor) add(status, cursor, toMs);
   return Math.max(0, qa);
+}
+
+/**
+ * Cycle length for the selected day mode.
+ * Calendar mode keeps the stored span. Working mode drops weekends and holidays.
+ */
+export function cycleTimeInMode(
+  issue: Pick<NormalizedIssue, 'firstInProgress' | 'doneAt' | 'cycleTimeDays'>,
+  options?: { workingDays?: boolean; holidays?: Iterable<string> },
+): number | undefined {
+  if (!options?.workingDays) return issue.cycleTimeDays;
+  const started = parseDate(issue.firstInProgress);
+  const done = parseDate(issue.doneAt);
+  if (!started || !done) return issue.cycleTimeDays;
+  return Math.max(0, workingElapsedDays(started, done, options.holidays ?? []));
 }
 
 function cycleSpanDays(

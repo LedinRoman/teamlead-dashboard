@@ -1,6 +1,12 @@
 import type { FlowStageId, FlowWorkflow, JiraSprintOption, NormalizedIssue } from '@shared/types';
 import { summarize } from './aggregate';
-import { isCycleExcluded, listCyclePeople, type CycleOverviewFilters, type CyclePerson } from './cycle-overview';
+import {
+  cycleTimeInMode,
+  isCycleExcluded,
+  listCyclePeople,
+  type CycleOverviewFilters,
+  type CyclePerson,
+} from './cycle-overview';
 import { classifyFlowIssue, isFlowScoped } from './flow-classify';
 import { flowAgingAges, flowStageLabel, type FlowAgingAges } from './flow-aging';
 import { buildFlowHistory, type FlowHistoryModel } from './flow-history';
@@ -136,7 +142,7 @@ export function buildFlowSnapshot(issues: NormalizedIssue[], options: FlowSnapsh
       ages,
       firstInProgress: issue.firstInProgress,
       doneAt: issue.doneAt,
-      cycleTimeDays: issue.cycleTimeDays,
+      cycleTimeDays: cycleTimeInMode(issue, options),
     });
   }
   aging.sort((a, b) => b.ages.episodeDays - a.ages.episodeDays || a.key.localeCompare(b.key));
@@ -159,7 +165,7 @@ export function buildFlowSnapshot(issues: NormalizedIssue[], options: FlowSnapsh
     }));
 
   const completed = scoped.filter((issue) => issue.cycleTimeDays !== undefined && issue.doneAt);
-  const summary = summarize(completed.map((issue) => issue.cycleTimeDays));
+  const summary = summarize(completed.map((issue) => cycleTimeInMode(issue, options)));
   const oldestRow = aging[0];
 
   const window = options.window;

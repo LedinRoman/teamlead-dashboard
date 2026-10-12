@@ -1,74 +1,104 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { StatusRule, type StatusGroup } from '@frontend/components/RulePickers';
 import { Callout, Field } from '@frontend/components/ui';
 import { apiGet } from '@frontend/lib/api';
 import { useAppData } from '@frontend/lib/app-data';
-import { TIMELINE_MIN_SEGMENT_PCT_MAX, validateFlowWorkflow, type FlowWorkflowValidation } from '@backend/metrics/flow-workflow';
+import {
+  DEFAULT_FLOW_WORKFLOW,
+  TIMELINE_MIN_SEGMENT_PCT_MAX,
+  validateFlowWorkflow,
+  type FlowWorkflowValidation,
+} from '@backend/metrics/flow-workflow';
 import type { FlowWorkflow, JiraProjectOption, JiraStatusOption } from '@shared/types';
 
-const STAGE_FIELDS: Array<{ key: WorkflowListKey; label: string; hint: string }> = [
+const STAGE_FIELDS: Array<{ key: WorkflowListKey; en: string; ru: string; hintEn: string; hintRu: string }> = [
   {
     key: 'notStarted',
-    label: 'К выполнению',
-    hint: 'Бэклог. Эти задачи не входят в Development WIP и Aging.',
+    en: 'To do',
+    ru: 'К выполнению',
+    hintEn: 'Backlog. These issues are not in Development WIP or Aging.',
+    hintRu: 'Бэклог. Эти задачи не входят в Development WIP и Aging.',
   },
   {
     key: 'development',
-    label: 'Development',
-    hint: 'По умолчанию «В работе», architecture, Fix. Rework — это возврат из проверки, а не статус Fix.',
+    en: 'Development',
+    ru: 'Development',
+    hintEn: 'In Progress. Rework is a return from review, not a status name.',
+    hintRu: 'In Progress. Rework — это возврат из проверки, а не имя статуса.',
   },
   {
     key: 'review',
-    label: 'Code Review',
-    hint: 'Оставьте пустым, если на доске нет отдельного code review — блок Review просто не появится.',
+    en: 'Code Review',
+    ru: 'Code Review',
+    hintEn: 'Leave empty if the board has no separate code review — the Review block simply will not appear.',
+    hintRu: 'Оставьте пустым, если на доске нет отдельного code review — блок Review просто не появится.',
   },
   {
     key: 'rework',
-    label: 'Rework (статусы)',
-    hint: 'Необязательно. Обычно Rework ставится по истории возврата, а не по имени статуса.',
+    en: 'Rework (statuses)',
+    ru: 'Rework (статусы)',
+    hintEn: 'Optional. Rework is usually inferred from a return, not from a status name.',
+    hintRu: 'Необязательно. Обычно Rework ставится по истории возврата, а не по имени статуса.',
   },
   {
     key: 'qaQueue',
-    label: 'QA WIP / очередь QA',
-    hint: 'Ready to QA. Задача в QA WIP, пока не перейдёт в один из статусов конца QA.',
+    en: 'QA WIP / QA queue',
+    ru: 'QA WIP / очередь QA',
+    hintEn: 'Ready to QA. An issue stays in QA WIP until it reaches an end-of-QA status.',
+    hintRu: 'Ready to QA. Задача в QA WIP, пока не дойдёт до статуса конца QA.',
   },
   {
     key: 'qaEnd',
-    label: 'Конец QA WIP',
-    hint: 'Первый переход в Проверку или Fix выводит задачу из QA WIP. Overlay, может пересекаться с другими стадиями.',
+    en: 'End of QA WIP',
+    ru: 'Конец QA WIP',
+    hintEn: 'The first transition into In Review takes the issue out of QA WIP. An overlay; it may overlap other stages.',
+    hintRu: 'Первый переход в In Review выводит задачу из QA WIP. Overlay, может пересекаться с другими стадиями.',
   },
   {
     key: 'inReview',
-    label: 'В проверке',
-    hint: 'Нейтральная группа текущего статуса «Проверка». Не QA WIP.',
+    en: 'In review',
+    ru: 'В проверке',
+    hintEn: 'In Review. A board status named Review or Проверка still matches.',
+    hintRu: 'In Review. Статус Review или «Проверка» тоже подходит.',
   },
   {
     key: 'qa',
-    label: 'QA (активное тестирование)',
-    hint: 'Дополнительные статусы активного тестирования, если появятся. Иначе достаточно Ready to QA + конца QA.',
+    en: 'QA (active testing)',
+    ru: 'QA (активное тестирование)',
+    hintEn: 'Extra statuses for active testing, if they appear. Otherwise Ready to QA plus the QA end is enough.',
+    hintRu: 'Дополнительные статусы активного тестирования, если появятся. Иначе достаточно Ready to QA + конца QA.',
   },
   {
     key: 'readyForRelease',
-    label: 'Ожидает релиза',
-    hint: 'Готово к выкладке, но ещё не done.',
+    en: 'Awaiting release',
+    ru: 'Ожидает релиза',
+    hintEn: 'Ready to ship, but not done yet.',
+    hintRu: 'Готово к выкладке, но ещё не done.',
   },
   {
     key: 'done',
-    label: 'Готово',
-    hint: 'Завершённая работа.',
+    en: 'Done',
+    ru: 'Готово',
+    hintEn: 'Finished work.',
+    hintRu: 'Завершённая работа.',
   },
   {
     key: 'cancelled',
-    label: 'Отменено',
-    hint: 'Пусто, пока на других досках не появится отменённый статус.',
+    en: 'Cancelled',
+    ru: 'Отменено',
+    hintEn: 'Empty until another board has a cancelled status.',
+    hintRu: 'Пусто, пока на других досках не появится отменённый статус.',
   },
   {
     key: 'blocked',
-    label: 'Blocked (признак)',
-    hint: 'Overlay: может пересекаться с development. Одна задача в Dev WIP считается один раз.',
+    en: 'Blocked (signal)',
+    ru: 'Blocked (признак)',
+    hintEn: 'Overlay: may overlap development. One issue in Dev WIP is counted once.',
+    hintRu: 'Overlay: может пересекаться с development. Одна задача в Dev WIP считается один раз.',
   },
 ];
 
@@ -81,13 +111,20 @@ export function FlowWorkflowSettings({
   value: FlowWorkflow;
   onChange: (next: FlowWorkflow) => void;
 }) {
+  const { t } = useI18n();
   const { teams } = useAppData();
   const [projects, setProjects] = useState<JiraProjectOption[]>([]);
   const [allStatuses, setAllStatuses] = useState<JiraStatusOption[]>([]);
   const [statusesByProject, setStatusesByProject] = useState<Record<string, JiraStatusOption[]>>({});
   const [loadingProject, setLoadingProject] = useState<string | undefined>();
   const [unavailable, setUnavailable] = useState(false);
+  const [custom, setCustom] = useState(() => !stageListsMatchDefaults(value));
+  const customTouched = useRef(false);
   const validation = useMemo(() => validateFlowWorkflow(value, allStatuses), [value, allStatuses]);
+
+  useEffect(() => {
+    if (!customTouched.current) setCustom(!stageListsMatchDefaults(value));
+  }, [value]);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,13 +196,39 @@ export function FlowWorkflowSettings({
   return (
     <div className="stack" style={{ gap: 12 }}>
       <p className="caption">
-        Стадии вкладки Flow. Точки Cycle Time (первый старт → первая проверка) задаются на Overview и Flow, не здесь.
-        Пересечения exclusive-групп запрещены; Blocked может пересекаться.
+        {t(
+          'To Do, In Progress, In Review, and Done. The QA queue is Ready to QA and ends at In Review. Blocked is Blocked. Cycle time points stay on Overview and Flow.',
+          'To Do, In Progress, In Review и Done. Очередь QA — Ready to QA, конец — In Review. Blocked — Blocked. Точки Cycle Time остаются на Overview и Flow.',
+        )}
       </p>
-      <ValidationNotes validation={validation} />
+      <label className="caption" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={custom}
+          onChange={(event) => {
+            const next = event.target.checked;
+            customTouched.current = true;
+            setCustom(next);
+            if (!next) onChange(withDefaultStages(value));
+          }}
+        />
+        {t('Custom statuses', 'Свои статусы')}
+      </label>
+      {custom && (
+        <p className="caption">
+          {t(
+            'Exclusive groups may not overlap. Blocked may.',
+            'Пересечения exclusive-групп запрещены. Blocked может пересекаться.',
+          )}
+        </p>
+      )}
+      {custom && <ValidationNotes validation={validation} />}
       <Field
-        label="Мин. ширина отрезка таймлайна (%)"
-        hint="Короткие статусы вроде Fix не схлопываются в линию. 0 — строго по времени, 2–3 обычно достаточно."
+        label={t('Minimum timeline segment width (%)', 'Мин. ширина отрезка таймлайна (%)')}
+        hint={t(
+          'Short statuses such as Fix do not collapse into a line. 0 is strictly by time; 2–3 is usually enough.',
+          'Короткие статусы вроде Fix не схлопываются в линию. 0 — строго по времени, 2–3 обычно достаточно.',
+        )}
       >
         <input
           type="number"
@@ -178,23 +241,53 @@ export function FlowWorkflowSettings({
           }
         />
       </Field>
-      {STAGE_FIELDS.map((field) => (
-        <StatusRule
-          key={field.key}
-          label={field.label}
-          hint={field.hint}
-          value={value[field.key]}
-          onChange={(next) => onChange({ ...value, [field.key]: next })}
-          groups={groups}
-          statusesByProject={statusesByProject}
-          onExpand={expand}
-          loadingProject={loadingProject}
-          allStatuses={allStatuses}
-          unavailable={unavailable}
-        />
-      ))}
+      {custom &&
+        STAGE_FIELDS.map((field) => (
+          <StatusRule
+            key={field.key}
+            label={t(field.en, field.ru)}
+            hint={t(field.hintEn, field.hintRu)}
+            value={value[field.key]}
+            onChange={(next) => onChange({ ...value, [field.key]: next })}
+            groups={groups}
+            statusesByProject={statusesByProject}
+            onExpand={expand}
+            loadingProject={loadingProject}
+            allStatuses={allStatuses}
+            unavailable={unavailable}
+          />
+        ))}
     </div>
   );
+}
+
+const STAGE_LIST_KEYS: WorkflowListKey[] = [
+  'notStarted',
+  'development',
+  'review',
+  'rework',
+  'qa',
+  'readyForRelease',
+  'done',
+  'cancelled',
+  'blocked',
+  'inReview',
+  'qaQueue',
+  'qaEnd',
+];
+
+function stageListsMatchDefaults(value: FlowWorkflow): boolean {
+  return STAGE_LIST_KEYS.every((key) => {
+    const left = value[key];
+    const right = DEFAULT_FLOW_WORKFLOW[key];
+    return left.length === right.length && left.every((name, index) => name === right[index]);
+  });
+}
+
+function withDefaultStages(value: FlowWorkflow): FlowWorkflow {
+  const next = { ...value };
+  for (const key of STAGE_LIST_KEYS) next[key] = [...DEFAULT_FLOW_WORKFLOW[key]];
+  return next;
 }
 
 function ValidationNotes({ validation }: { validation: FlowWorkflowValidation }) {

@@ -1,4 +1,5 @@
 import { listHolidays } from '@backend/db/holidays';
+import { serverTr } from '@backend/server/locale';
 import { getFlowWorkflow } from '@backend/db/settings';
 import type { JiraSprintOption, Team } from '@shared/types';
 import { uniqueAssignees, type CyclePerson } from '@backend/metrics/cycle-overview';
@@ -55,7 +56,7 @@ export async function loadQuality(request: QualityLoadRequest, context?: AppCont
 
 async function loadQualityInner(request: QualityLoadRequest, ctx: AppContext): Promise<QualityPayload> {
   if (request.teamIds.length === 0) {
-    throw new Error('Нужна хотя бы одна команда.');
+    throw new Error(serverTr('Pick at least one team.', 'Нужна хотя бы одна команда.'));
   }
 
   const workflow = mergeFlowWorkflow(await getFlowWorkflow());
@@ -83,7 +84,7 @@ async function loadQualityInner(request: QualityLoadRequest, ctx: AppContext): P
   const sprints = sortSprintsOldestFirst(await collectTeamSprints(teams, ctx.client));
   const selected = sprints.find((sprint) => sprint.id === request.sprintId);
   if (!selected) {
-    throw new Error('Выбранный спринт не найден на досках команды.');
+    throw new Error(serverTr('That sprint is not on the team boards.', 'Выбранный спринт не найден на досках команды.'));
   }
 
   const historySprints = pickHistorySprints(sprints, selected, requestedHistory);
@@ -177,7 +178,7 @@ async function loadQualityInner(request: QualityLoadRequest, ctx: AppContext): P
 
   const current = computed.get(selected.id);
   if (!current) {
-    throw new Error('Не удалось посчитать выбранный спринт.');
+    throw new Error(serverTr('Could not calculate the selected sprint.', 'Не удалось посчитать выбранный спринт.'));
   }
 
   const history = sortSprintsOldestFirst(historySprints).flatMap((sprint) => {

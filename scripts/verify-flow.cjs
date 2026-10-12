@@ -137,6 +137,52 @@ const reworkAges = flowAgingAges(returned, workflow, now);
 check('returned episode label', reworkAges.episodeLabel, 'In progress');
 check('returned episode starts after first review', reworkAges.episodeDays, 3.1);
 check('original cycle time stays on the row', reworkAges.originalCycleTimeDays, 2);
+const weekendFrom = new Date('2026-09-11T18:00:00.000Z');
+const weekendTo = new Date('2026-09-14T10:00:00.000Z');
+const weekendRework = issue({
+  key: 'REW-WK',
+  status: 'В работе',
+  firstInProgress: weekendFrom.toISOString(),
+  doneAt: weekendTo.toISOString(),
+  doneAtSource: 'changelog',
+  cycleTimeDays: elapsedDays(weekendFrom, weekendTo),
+  statusEnteredAt: '2026-09-15T09:00:00.000Z',
+  statusTransitions: [
+    { at: weekendFrom.toISOString(), from: 'К выполнению', to: 'В работе' },
+    { at: weekendTo.toISOString(), from: 'В работе', to: 'Проверка' },
+    { at: '2026-09-15T09:00:00.000Z', from: 'Проверка', to: 'В работе' },
+  ],
+});
+check(
+  'calendar mode keeps stored original cycle time',
+  flowAgingAges(weekendRework, workflow, now).originalCycleTimeDays,
+  weekendRework.cycleTimeDays,
+);
+check(
+  'working mode shortens original cycle time',
+  flowAgingAges(weekendRework, workflow, now, { workingDays: true }).originalCycleTimeDays,
+  workingElapsedDays(weekendFrom, weekendTo),
+);
+const weekendDone = issue({
+  status: 'Проверка',
+  effectiveCategory: 'done',
+  firstInProgress: weekendFrom.toISOString(),
+  doneAt: weekendTo.toISOString(),
+  doneAtSource: 'changelog',
+  cycleTimeDays: elapsedDays(weekendFrom, weekendTo),
+  signals: ['done'],
+});
+const weekendBatch = [0, 1, 2, 3, 4].map((index) => issue({ ...weekendDone, key: `WK-${index}` }));
+check(
+  'calendar flow threshold uses stored cycle time',
+  buildFlowSnapshot(weekendBatch, { workflow, now }).thresholds.median,
+  2.7,
+);
+check(
+  'working flow threshold drops the weekend',
+  buildFlowSnapshot(weekendBatch, { workflow, now, workingDays: true }).thresholds.median,
+  0.7,
+);
 
 const checkingAges = flowAgingAges(
   issue({
@@ -219,11 +265,12 @@ const visits = issue({
     { at: '2026-09-14T09:00:00.000Z', from: 'Проверка', to: 'Готово' },
   ],
 });
-const intervals = stageIntervalsUntilFirstReview(visits.statusTransitions, workflow, visits.created, visits.doneAt);
+const withArchitecture = mergeFlowWorkflow({ development: ['In Progress', 'architecture', 'Fix'] });
+const intervals = stageIntervalsUntilFirstReview(visits.statusTransitions, withArchitecture, visits.created, visits.doneAt);
 const developmentMs = intervals.filter((row) => row.stage === 'development').reduce((sum, row) => sum + row.ms, 0);
 check('repeat development visits are summed', developmentMs, 4 * 86_400_000);
 check('time after first review is excluded', intervals.some((row) => row.to > Date.parse('2026-09-12T09:00:00.000Z')), false);
-const stageModel = buildFlowStageTime([visits], workflow);
+const stageModel = buildFlowStageTime([visits], withArchitecture);
 check('stage time n is 1', stageModel.sampleSize, 1);
 check('stage time drops К выполнению', stageModel.rows.some((row) => row.stage === 'notStarted' || row.label === 'К выполнению'), false);
 check('empty stage time has a message', buildFlowStageTime([], workflow).emptyMessage.includes('этапам'), true);
@@ -473,7 +520,7 @@ check(
 const fs = require('node:fs');
 const path = require('node:path');
 const agingTable = fs.readFileSync(path.join(__dirname, '../src/frontend/components/flow/FlowAgingTable.tsx'), 'utf8');
-check('aging shows execution time for review/done', agingTable.includes('cycle time −'), true);
+check('aging shows execution time for review/done', agingTable.includes('executionDays') && agingTable.includes('cycle time'), true);
 check('aging colors by agingAttention, not rework', agingTable.includes('agingAttention(row, thresholds)'), true);
 check('aging has no rework-only checkbox', agingTable.includes('Только Rework'), false);
 check('aging has no Rework badge', agingTable.includes('Rework'), false);

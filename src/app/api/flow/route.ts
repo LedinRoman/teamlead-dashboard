@@ -1,4 +1,5 @@
 import { clampHorizon, loadFlow } from '@backend/server/flow-service';
+import { apiText, withLocale } from '@backend/server/locale';
 import { badRequest, failure, ok, readJson } from '@backend/server/responses';
 import { parseIssueKeys } from '@backend/metrics/cycle-overview';
 import { parseStatusName } from '@backend/server/validate';
@@ -20,11 +21,15 @@ interface FlowBody {
   refresh?: unknown;
 }
 
-export async function POST(request: Request) {
+export function POST(request: Request) {
+  return withLocale(request, () => postFlow(request));
+}
+
+async function postFlow(request: Request) {
   try {
     const body = await readJson<FlowBody>(request);
     const teamIds = stringList(body.teamIds);
-    if (teamIds.length === 0) return badRequest('Нужна хотя бы одна команда.');
+    if (teamIds.length === 0) return badRequest(apiText(request, 'Pick at least one team.', 'Нужна хотя бы одна команда.'));
     const excludedKeys =
       typeof body.excludedKeys === 'string'
         ? parseIssueKeys(body.excludedKeys)

@@ -1,3 +1,5 @@
+import { isRu } from '../../shared/locale';
+
 export const MS_PER_DAY = 86_400_000;
 
 export function parseDate(value: unknown): Date | undefined {
@@ -116,14 +118,15 @@ export function formatSnapshotAge(iso: string, now = Date.now()): string {
   const then = Date.parse(iso);
   if (!Number.isFinite(then)) return iso;
   const seconds = Math.max(0, Math.round((now - then) / 1000));
-  if (seconds < 15) return 'только что';
-  if (seconds < 60) return `${seconds} с назад`;
+  const ru = isRu();
+  if (seconds < 15) return ru ? 'только что' : 'just now';
+  if (seconds < 60) return ru ? `${seconds} с назад` : `${seconds}s ago`;
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} мин назад`;
+  if (minutes < 60) return ru ? `${minutes} мин назад` : `${minutes} min ago`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} ч назад`;
+  if (hours < 24) return ru ? `${hours} ч назад` : `${hours}h ago`;
   const days = Math.round(hours / 24);
-  return `${days} дн назад`;
+  return ru ? `${days} дн назад` : `${days}d ago`;
 }
 
 export function eachDay(from: Date, to: Date, maxDays = 400): Date[] {

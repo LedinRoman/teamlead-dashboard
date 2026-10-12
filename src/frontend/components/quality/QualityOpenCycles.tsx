@@ -1,5 +1,6 @@
+import { useI18n } from '@frontend/i18n/locale';
 import { formatCycleDuration } from '@backend/metrics/cycle-overview';
-import { QUALITY_HINTS } from '@backend/metrics/quality-copy';
+import { qualityHints } from '@backend/metrics/quality-copy';
 import type { QualityIssueRow } from '@backend/metrics/quality-model';
 
 export function QualityOpenCycles({
@@ -9,11 +10,13 @@ export function QualityOpenCycles({
   issues: QualityIssueRow[];
   onSelect?: () => void;
 }) {
+  const { t, locale } = useI18n();
+  const hints = qualityHints(locale);
   const open = issues
     .filter((issue) => issue.openCycle)
     .sort((left, right) => (right.openCycle?.ageDays ?? 0) - (left.openCycle?.ageDays ?? 0));
   if (open.length === 0) {
-    return <p className="caption">Нет открытых rework-циклов в этой когорте.</p>;
+    return <p className="caption">{t('No open rework cycles in this cohort.', 'Нет открытых rework-циклов в этой когорте.')}</p>;
   }
   return (
     <div className="stack" style={{ gap: 8 }}>
@@ -21,12 +24,12 @@ export function QualityOpenCycles({
         <table className="data">
           <thead>
             <tr>
-              <th>Ключ</th>
-              <th>Название</th>
-              <th>Исполнитель</th>
-              <th>Возврат</th>
-              <th>Возраст</th>
-              <th>Статус</th>
+              <th>{t('Key', 'Ключ')}</th>
+              <th>{t('Summary', 'Название')}</th>
+              <th>{t('Assignee', 'Исполнитель')}</th>
+              <th>{t('Return', 'Возврат')}</th>
+              <th>{t('Age', 'Возраст')}</th>
+              <th>{t('Status', 'Статус')}</th>
             </tr>
           </thead>
           <tbody>
@@ -48,10 +51,10 @@ export function QualityOpenCycles({
         </table>
       </div>
       <p className="caption">
-        {QUALITY_HINTS.openCycles}{' '}
+        {hints.openCycles}{' '}
         {onSelect && (
           <button type="button" className="text-button" onClick={onSelect}>
-            Показать в таблице
+            {t('Show in the table', 'Показать в таблице')}
           </button>
         )}
       </p>

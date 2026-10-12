@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { formatCycleDuration, formatStoryPoints } from '@backend/metrics/cycle-overview';
 import { agingAttention, agingCompareDays, isAgingCompletedStatus } from '@backend/metrics/flow-aging';
 import type { FlowAgingRow, FlowSnapshot } from '@backend/metrics/flow-model';
+import { uiLabel } from '@shared/locale';
 import type { FlowStageId } from '@shared/types';
 
 export function FlowAgingTable({
@@ -20,6 +22,7 @@ export function FlowAgingTable({
   onClearStage?: () => void;
   onOpenTimeline?: (key: string) => void;
 }) {
+  const { t } = useI18n();
   const [assignee, setAssignee] = useState('');
   const [olderThan, setOlderThan] = useState<'median' | 'p85' | ''>('');
   const [openKey, setOpenKey] = useState<string | undefined>();
@@ -28,13 +31,13 @@ export function FlowAgingTable({
     const names = new Map<string, string>();
     for (const row of flow.aging) {
       if (!row.assigneeId || row.assigneeId === 'unassigned') {
-        names.set('unassigned', row.assigneeName || 'Unassigned');
+        names.set('unassigned', row.assigneeName || t('Unassigned', 'Без исполнителя'));
       } else {
         names.set(row.assigneeId, row.assigneeName);
       }
     }
     return [...names.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [flow.aging]);
+  }, [flow.aging, t]);
 
   const rows = flow.aging.filter((row) => {
     if (!matchesAgingFilter(row, stageFilter, flow.oldest?.key)) return false;
@@ -48,16 +51,16 @@ export function FlowAgingTable({
 
   if (flow.aging.length === 0) {
     if (flow.agingSprints && flow.agingSprints.length === 0) {
-      return <p className="caption">No active sprint on the selected boards, so aging WIP is empty.</p>;
+      return <p className="caption">{t('No active sprint on the selected boards, so aging WIP is empty.', 'На выбранных досках нет активного спринта, поэтому Aging WIP пуст.')}</p>;
     }
-    return <p className="caption">The active sprint has no issues in aging for the selected episode rule.</p>;
+    return <p className="caption">{t('The active sprint has no issues in aging for the selected episode rule.', 'В активном спринте нет задач в Aging для выбранного правила эпизода.')}</p>;
   }
 
   return (
     <div className="stack" style={{ gap: 8 }}>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <select className="cycle-def-select" value={assignee} onChange={(event) => setAssignee(event.target.value)}>
-          <option value="">All assignees</option>
+          <option value="">{t('All assignees', 'Все исполнители')}</option>
           {people.map(([id, name]) => (
             <option key={id} value={id}>
               {name}
@@ -70,34 +73,34 @@ export function FlowAgingTable({
             value={olderThan}
             onChange={(event) => setOlderThan(event.target.value as 'median' | 'p85' | '')}
           >
-            <option value="">Any age</option>
-            <option value="median">Older than median ({formatCycleDuration(flow.thresholds.median)})</option>
-            <option value="p85">Older than P85 ({formatCycleDuration(flow.thresholds.p85)})</option>
+            <option value="">{t('Any age', 'Любой возраст')}</option>
+            <option value="median">{t(`Older than median (${formatCycleDuration(flow.thresholds.median)})`, `Старше медианы (${formatCycleDuration(flow.thresholds.median)})`)}</option>
+            <option value="p85">{t(`Older than P85 (${formatCycleDuration(flow.thresholds.p85)})`, `Старше P85 (${formatCycleDuration(flow.thresholds.p85)})`)}</option>
           </select>
         ) : (
-          <span className="caption">Median/P85 thresholds are hidden: too few completed issues (n&lt;5).</span>
+          <span className="caption">{t('Median/P85 thresholds are hidden: too few completed issues (n<5).', 'Пороги Median/P85 скрыты: слишком мало завершённых задач (n<5).')}</span>
         )}
         {stageFilter && (
           <button type="button" className="cycle-exclude-restore" onClick={onClearStage}>
-            clear stage filter
+            {t('clear stage filter', 'сбросить фильтр стадии')}
           </button>
         )}
       </div>
       {rows.length === 0 ? (
-        <p className="caption">No issues match the selected filter.</p>
+        <p className="caption">{t('No issues match the selected filter.', 'Нет задач по выбранному фильтру.')}</p>
       ) : (
         <div className="flow-table-wrap">
           <table className="flow-aging">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Summary</th>
-                <th>Stage</th>
-                <th>Status</th>
-                <th>Assignee</th>
+                <th>{t('Key', 'Ключ')}</th>
+                <th>{t('Summary', 'Название')}</th>
+                <th>{t('Stage', 'Стадия')}</th>
+                <th>{t('Status', 'Статус')}</th>
+                <th>{t('Assignee', 'Исполнитель')}</th>
                 <th>SP</th>
-                <th>Episode</th>
-                <th>In current status</th>
+                <th>{t('Episode', 'Эпизод')}</th>
+                <th>{t('In current status', 'В текущем статусе')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -136,6 +139,7 @@ function AgingRow({
   onToggle: () => void;
   onOpenTimeline?: (key: string) => void;
 }) {
+  const { t } = useI18n();
   const attention = agingAttention(row, thresholds);
   return (
     <>
@@ -146,27 +150,27 @@ function AgingRow({
           </a>
         </td>
         <td className="flow-aging-summary">{row.summary}</td>
-        <td>{row.stageLabel}</td>
+        <td>{uiLabel(row.stageLabel)}</td>
         <td>{row.status}</td>
         <td>{row.assigneeName}</td>
         <td>{row.storyPoints !== undefined ? formatStoryPoints(row.storyPoints) : '—'}</td>
         <td>
-          {row.ages.episodeLabel}: {formatCycleDuration(row.ages.episodeDays)}
+          {uiLabel(row.ages.episodeLabel)}: {formatCycleDuration(row.ages.episodeDays)}
           {isAgingCompletedStatus(row.stage) && (
-            <> (cycle time − {formatCycleDuration(row.ages.executionDays)})</>
+            <> ({t('cycle time', 'cycle time')} − {formatCycleDuration(row.ages.executionDays)})</>
           )}
-          {row.blocked && <span className="flow-badge">Blocked</span>}
+          {row.blocked && <span className="flow-badge">{t('Blocked', 'Заблокировано')}</span>}
         </td>
         <td>{formatCycleDuration(row.ages.statusDays)}</td>
         <td>
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             {onOpenTimeline && (
               <button type="button" className="cycle-exclude-restore" onClick={() => onOpenTimeline(row.key)}>
-                timeline
+                {t('timeline', 'линия')}
               </button>
             )}
             <button type="button" className="cycle-exclude-restore" onClick={onToggle}>
-              {open ? 'hide' : 'details'}
+              {open ? t('hide', 'скрыть') : t('details', 'подробнее')}
             </button>
           </div>
         </td>
@@ -175,13 +179,13 @@ function AgingRow({
         <tr className="flow-aging-detail">
           <td colSpan={9}>
             <p className="caption">
-              Episode start: {formatStamp(row.ages.episodeStartedAt)} · Entered status:{' '}
+              {t('Episode start', 'Старт эпизода')}: {formatStamp(row.ages.episodeStartedAt)} · {t('Entered status', 'Вошла в статус')}:{' '}
               {formatStamp(row.ages.statusEnteredAt)}
-              {row.doneAt ? ` · First review: ${formatStamp(row.doneAt)}` : ''}
+              {row.doneAt ? ` · ${t('First review', 'Первая проверка')}: ${formatStamp(row.doneAt)}` : ''}
               {row.ages.originalCycleTimeDays !== undefined
-                ? ` · Original cycle time: ${formatCycleDuration(row.ages.originalCycleTimeDays)}`
+                ? ` · ${t('Original cycle time', 'Исходный cycle time')}: ${formatCycleDuration(row.ages.originalCycleTimeDays)}`
                 : ''}
-              {row.firstInProgress ? ` · First start: ${formatStamp(row.firstInProgress)}` : ''}
+              {row.firstInProgress ? ` · ${t('First start', 'Первый старт')}: ${formatStamp(row.firstInProgress)}` : ''}
             </p>
           </td>
         </tr>

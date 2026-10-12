@@ -1,6 +1,7 @@
+import { useI18n } from '@frontend/i18n/locale';
 import { BarChart } from '@frontend/components/charts';
 import { Hint } from '@frontend/components/ui';
-import { QUALITY_HINTS } from '@backend/metrics/quality-copy';
+import { qualityHints } from '@backend/metrics/quality-copy';
 import { previousClosedQuality, type QualityHistoryRow } from '@backend/metrics/quality-model';
 
 export function QualityHistory({
@@ -14,56 +15,81 @@ export function QualityHistory({
   used?: number;
   currentSprintId?: number;
 }) {
+  const { t, locale } = useI18n();
+  const hints = qualityHints(locale);
   if (rows.length === 0) {
-    return <p className="caption">Нет предыдущих спринтов на досках команды.</p>;
+    return <p className="caption">{t('No earlier sprints on the team boards.', 'Нет предыдущих спринтов на досках команды.')}</p>;
   }
   const previous = currentSprintId ? previousClosedQuality(rows, currentSprintId) : undefined;
   const current = rows.find((row) => row.current);
   const nData = rows.map((row) => ({
     label: row.incomplete ? `${shortSprint(row.name)}*` : shortSprint(row.name),
     value: row.n,
-    hint: `${row.name}: N=${row.n} · R=${row.r}${row.incomplete ? ' · неполный' : ''}`,
+    hint: t(
+      `${row.name}: N=${row.n} · R=${row.r}${row.incomplete ? ' · incomplete' : ''}`,
+      `${row.name}: N=${row.n} · R=${row.r}${row.incomplete ? ' · неполный' : ''}`,
+    ),
   }));
   const rateData = rows
     .filter((row) => row.rate !== null)
     .map((row) => ({
       label: row.incomplete ? `${shortSprint(row.name)}*` : shortSprint(row.name),
       value: Math.round((row.rate ?? 0) * 100),
-      hint: `${row.name}: ${formatRate(row.rate)}${row.incomplete ? ' · неполный, не итог' : ''}`,
+      hint: t(
+        `${row.name}: ${formatRate(row.rate, t)}${row.incomplete ? ' · incomplete, not a total' : ''}`,
+        `${row.name}: ${formatRate(row.rate, t)}${row.incomplete ? ' · неполный, не итог' : ''}`,
+      ),
     }));
   const fpyData = rows
     .filter((row) => row.fpy !== null)
     .map((row) => ({
       label: row.incomplete ? `${shortSprint(row.name)}*` : shortSprint(row.name),
       value: Math.round((row.fpy ?? 0) * 100),
-      hint: `${row.name}: FPY ${formatRate(row.fpy)}${row.incomplete ? ' · неполный, не итог' : ''}`,
+      hint: t(
+        `${row.name}: FPY ${formatRate(row.fpy, t)}${row.incomplete ? ' · incomplete, not a total' : ''}`,
+        `${row.name}: FPY ${formatRate(row.fpy, t)}${row.incomplete ? ' · неполный, не итог' : ''}`,
+      ),
     }));
   const horizon =
     requested && used
       ? requested === used
-        ? `Последние ${used} спринтов.`
-        : `Запрошено ${requested}, на досках есть ${used}.`
+        ? t(`Last ${used} sprints.`, `Последние ${used} спринтов.`)
+        : t(`Requested ${requested}, the boards have ${used}.`, `Запрошено ${requested}, на досках есть ${used}.`)
       : undefined;
 
   return (
     <div className="stack" style={{ gap: 12 }}>
-      <BarChart data={nData} xLabel="Спринт" yLabel="N" caption="Размер когорты First QA. * — активный, не финальный." />
+      <BarChart
+        data={nData}
+        xLabel={t('Sprint', 'Спринт')}
+        yLabel="N"
+        caption={t(
+          'Size of the First QA cohort. * is the active sprint, not final.',
+          'Размер когорты First QA. * — активный, не финальный.',
+        )}
+      />
       {rateData.length > 0 && (
         <BarChart
           data={rateData}
-          xLabel="Спринт"
+          xLabel={t('Sprint', 'Спринт')}
           yLabel="Rate %"
           tone="warning"
-          caption="Return Rate каждого спринта отдельно. Спринты без точного Rate на график не попадают."
+          caption={t(
+            'Return Rate of each sprint on its own. Sprints without an exact Rate are left off the chart.',
+            'Return Rate каждого спринта отдельно. Спринты без точного Rate на график не попадают.',
+          )}
           formatY={(value) => `${Math.round(value)}%`}
         />
       )}
       {fpyData.length > 0 && (
         <BarChart
           data={fpyData}
-          xLabel="Спринт"
+          xLabel={t('Sprint', 'Спринт')}
           yLabel="FPY %"
-          caption="First Pass Yield каждого спринта. Не корзина «0 возвратов»."
+          caption={t(
+            'First Pass Yield of each sprint. Not the “0 returns” bucket.',
+            'First Pass Yield каждого спринта. Не корзина «0 возвратов».',
+          )}
           formatY={(value) => `${Math.round(value)}%`}
         />
       )}
@@ -71,16 +97,16 @@ export function QualityHistory({
         <table className="data">
           <thead>
             <tr>
-              <th>Спринт</th>
+              <th>{t('Sprint', 'Спринт')}</th>
               <th className="num">
-                <Hint text={QUALITY_HINTS.firstQa}>N</Hint>
+                <Hint text={hints.firstQa}>N</Hint>
               </th>
               <th className="num">R</th>
               <th className="num">
-                <Hint text={QUALITY_HINTS.rate}>Return Rate</Hint>
+                <Hint text={hints.rate}>{t('Return Rate', 'Return Rate')}</Hint>
               </th>
               <th className="num">
-                <Hint text={QUALITY_HINTS.fpy}>FPY</Hint>
+                <Hint text={hints.fpy}>FPY</Hint>
               </th>
               <th className="num">Loops</th>
               <th className="num">R₂</th>
@@ -92,13 +118,13 @@ export function QualityHistory({
               <tr key={row.sprintId} className={row.current ? 'is-current' : undefined}>
                 <td>
                   {row.name}
-                  {row.current ? ' · текущий' : ''}
-                  {row.incomplete ? ' · неполный' : ''}
+                  {row.current ? t(' · current', ' · текущий') : ''}
+                  {row.incomplete ? t(' · incomplete', ' · неполный') : ''}
                 </td>
                 <td className="num">{row.n}</td>
                 <td className="num">{row.r}</td>
-                <td className="num">{formatRate(row.rate)}</td>
-                <td className="num">{formatRate(row.fpy)}</td>
+                <td className="num">{formatRate(row.rate, t)}</td>
+                <td className="num">{formatRate(row.fpy, t)}</td>
                 <td className="num">{row.loops}</td>
                 <td className="num">{row.r2}</td>
                 <td className="num">{row.production + row.incidents}</td>
@@ -108,17 +134,20 @@ export function QualityHistory({
         </table>
       </div>
       <p className="caption">
-        {horizon} {QUALITY_HINTS.history}
+        {horizon} {hints.history}
         {current && previous
-          ? ` К предыдущему закрытому (${previous.name}): Rate ${formatRate(current.rate)} vs ${formatRate(previous.rate)}; FPY ${formatRate(current.fpy)} vs ${formatRate(previous.fpy)}.`
+          ? t(
+              ` Versus the previous closed sprint (${previous.name}): Rate ${formatRate(current.rate, t)} vs ${formatRate(previous.rate, t)}; FPY ${formatRate(current.fpy, t)} vs ${formatRate(previous.fpy, t)}.`,
+              ` К предыдущему закрытому (${previous.name}): Rate ${formatRate(current.rate, t)} vs ${formatRate(previous.rate, t)}; FPY ${formatRate(current.fpy, t)} vs ${formatRate(previous.fpy, t)}.`,
+            )
           : ''}
       </p>
     </div>
   );
 }
 
-function formatRate(rate: number | null): string {
-  if (rate === null) return 'Нет данных';
+function formatRate(rate: number | null, t: (en: string, ru: string) => string): string {
+  if (rate === null) return t('No data', 'Нет данных');
   return `${Math.round(rate * 100)}%`;
 }
 

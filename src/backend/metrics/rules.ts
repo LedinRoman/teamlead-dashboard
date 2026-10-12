@@ -17,8 +17,9 @@ export const QA_WIP_STATUS = 'Ready to QA';
  * value still hits the English changelog string.
  */
 const STATUS_ALIASES: Record<string, string[]> = {
-  проверка: ['review'],
-  review: ['проверка'],
+  проверка: ['review', 'in review'],
+  review: ['проверка', 'in review'],
+  'in review': ['проверка', 'review'],
   готово: ['done'],
   done: ['готово'],
   'в работе': ['in progress'],

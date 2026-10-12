@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { formatSnapshotAge } from '@backend/metrics/time';
 import type { StatValue } from '@shared/types';
 
@@ -150,9 +151,10 @@ export function Segmented<T extends string | number>({
 }
 
 export function Spinner({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <span className="caption">
-      <span className="spinner" /> {label ?? 'Loading'}
+      <span className="spinner" /> {label ?? t('Loading', 'Загрузка')}
     </span>
   );
 }
@@ -168,17 +170,18 @@ export function SnapshotBar({
   refreshing: boolean;
   onRefresh: () => void;
 }) {
+  const { t } = useI18n();
   const age = queriedAt ? formatSnapshotAge(queriedAt) : undefined;
   return (
     <div className="row" style={{ gap: 8, alignItems: 'center' }}>
       {age && (
         <span className="caption">
-          Снимок {age}
-          {fromCache === false ? ' · с Jira' : ''}
+          {t('Snapshot', 'Снимок')} {age}
+          {fromCache === false ? t(' · from Jira', ' · с Jira') : ''}
         </span>
       )}
       <button type="button" className="subtle" onClick={onRefresh} disabled={refreshing}>
-        {refreshing ? 'Обновляю…' : 'Обновить'}
+        {refreshing ? t('Refreshing…', 'Обновляю…') : t('Refresh', 'Обновить')}
       </button>
     </div>
   );
@@ -214,12 +217,13 @@ export function SourceAppendix({
   extraQueries?: Array<{ label: string; jql: string }>;
   linkTypes?: Array<{ type: string; count: number }>;
 }) {
+  const { t } = useI18n();
   return (
     <details className="appendix">
-      <summary>Source: JQL, field coverage and assumptions</summary>
+      <summary>{t('Source: JQL, field coverage and assumptions', 'Источник: JQL, покрытие полей и допущения')}</summary>
       <div className="stack" style={{ gap: 8, marginTop: 6 }}>
         <div>
-          <div className="caption">Scope query</div>
+          <div className="caption">{t('Scope query', 'Запрос выборки')}</div>
           <pre className="mono">{jql}</pre>
         </div>
         {extraQueries?.map((entry) => (
@@ -229,21 +233,25 @@ export function SourceAppendix({
           </div>
         ))}
         <div className="caption">
-          {issueCount} work items fetched. Queried {formatTimestamp(queriedAt)}
-          {fromCache ? ' (served from the local cache)' : ''}.
+          {t(
+            `${issueCount} work items fetched. Queried ${formatTimestamp(queriedAt)}${fromCache ? ' (served from the local cache)' : ''}.`,
+            `${issueCount} задач загружено. Запрос ${formatTimestamp(queriedAt)}${fromCache ? ' (из локального снимка)' : ''}.`,
+          )}
         </div>
         <div className="row" style={{ gap: 6 }}>
           {Object.entries(coverage).map(([field, present]) => (
             <Pill key={field} tone={present ? 'success' : 'neutral'}>
-              {formatFieldName(field)}: {present ? 'present' : 'absent'}
+              {formatFieldName(field)}: {present ? t('present', 'есть') : t('absent', 'нет')}
             </Pill>
           ))}
         </div>
         {linkTypes && linkTypes.length > 0 && (
           <div>
             <div className="caption">
-              Link phrases in this scope. Jira localises these, so copy the ones that mean waiting into the
-              blocking-link rule in Settings.
+              {t(
+                'Link phrases in this scope. Jira localises these, so copy the ones that mean waiting into the blocking-link rule in Settings.',
+                'Фразы связей в этой выборке. Jira локализует их, поэтому скопируйте те, что означают ожидание, в правило блокирующих связей в Настройках.',
+              )}
             </div>
             <div className="row" style={{ gap: 6, marginTop: 4 }}>
               {linkTypes.map((entry) => (
@@ -295,28 +303,38 @@ export function Modal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="modal-card">
-        <header className="modal-head">
-          <div className="modal-title">{title}</div>
-          <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
-            ×
-          </button>
-        </header>
+      <ModalCard title={title} onClose={onClose}>
         {children}
-      </div>
+      </ModalCard>
     </dialog>
   );
 }
 
-export function ErrorNotice({ error, onRetry }: { error: string; onRetry?: () => void }) {
+function ModalCard({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const { t } = useI18n();
   return (
-    <Callout tone="danger" title="Could not load this view">
+    <div className="modal-card">
+      <header className="modal-head">
+        <div className="modal-title">{title}</div>
+        <button type="button" className="modal-close" aria-label={t('Close', 'Закрыть')} onClick={onClose}>
+          ×
+        </button>
+      </header>
+      {children}
+    </div>
+  );
+}
+
+export function ErrorNotice({ error, onRetry }: { error: string; onRetry?: () => void }) {
+  const { t } = useI18n();
+  return (
+    <Callout tone="danger" title={t('Could not load this view', 'Не удалось загрузить этот экран')}>
       <div className="stack" style={{ gap: 8 }}>
         <span>{error}</span>
         {onRetry && (
           <div>
             <button type="button" onClick={onRetry}>
-              Try again
+              {t('Try again', 'Повторить')}
             </button>
           </div>
         )}

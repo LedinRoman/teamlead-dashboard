@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { apiPost, errorMessage } from '@frontend/lib/api';
 import { formatCycleDuration, parseIssueKeys } from '@backend/metrics/cycle-overview';
 import {
@@ -15,6 +16,7 @@ import {
   type FlowTimelineSegment,
 } from '@backend/metrics/flow-issue-timeline';
 import { flowTimelineSegmentColor } from '@backend/metrics/flow-stage-tone';
+import { uiLabel } from '@shared/locale';
 import type { FlowWorkflow } from '@shared/types';
 
 const EXCLUDED_STORAGE = 'flow.timelineExcludedStatuses';
@@ -41,6 +43,7 @@ export function FlowIssueTimeline({
   workingDays?: boolean;
   holidays?: string[];
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState('');
   const [excludedStatuses, setExcludedStatuses] = useState<string[] | undefined>(() => readExcludedStatuses());
   const [remote, setRemote] = useState<IssueTimeline | undefined>();
@@ -90,7 +93,7 @@ export function FlowIssueTimeline({
     }
     if (teamIds.length === 0) {
       setRemote(undefined);
-      setLookupError('Нужна хотя бы одна команда.');
+      setLookupError('need-team');
       setLookupLoading(false);
       return;
     }
@@ -155,8 +158,8 @@ export function FlowIssueTimeline({
         <input
           list="flow-timeline-keys"
           value={draft}
-          placeholder="Ключ из проектов команды — CDR-2029"
-          aria-label="Ключ задачи для таймлайна"
+          placeholder={t('A key from the team projects — CDR-2029', 'Ключ из проектов команды — CDR-2029')}
+          aria-label={t('Issue key for the timeline', 'Ключ задачи для таймлайна')}
           onChange={(event) => setDraft(event.target.value)}
         />
         <datalist id="flow-timeline-keys">
@@ -167,18 +170,18 @@ export function FlowIssueTimeline({
           ))}
         </datalist>
         <button type="submit" className="flow-tl-action" disabled={!parseIssueKeys(draft)[0]}>
-          Открыть
+          {t('Open', 'Открыть')}
         </button>
         {selectedKey && (
           <button type="button" className="flow-tl-action" onClick={() => onSelect(undefined)}>
-            Сбросить
+            {t('Clear', 'Сбросить')}
           </button>
         )}
         <details className="check-drop flow-tl-status-drop">
-          <summary className="flow-tl-action">{excludeSummary(excluded)}</summary>
+          <summary className="flow-tl-action">{excludeSummary(excluded, t)}</summary>
           <div className="check-drop-menu checklist flow-tl-status-menu">
             {statusOptions.length === 0 ? (
-              <p className="caption">Нет статусов для исключения.</p>
+              <p className="caption">{t('No statuses to exclude.', 'Нет статусов для исключения.')}</p>
             ) : (
               statusOptions.map((name) => (
                 <label key={name.toLowerCase()}>
@@ -196,10 +199,14 @@ export function FlowIssueTimeline({
       </form>
 
       {!selectedKey && (
-        <p className="caption">Ключ из проектов выбранных команд, или клик «линия» в Aging. Спринт не нужен.</p>
+        <p className="caption">{t('A key from the selected teams’ projects, or click “timeline” in Aging. A sprint is not required.', 'Ключ из проектов выбранных команд, или клик «линия» в Aging. Спринт не нужен.')}</p>
       )}
-      {lookupLoading && <p className="caption">Загружаю {selectedKey}…</p>}
-      {lookupError && <p className="caption">{lookupError}</p>}
+      {lookupLoading && <p className="caption">{t(`Loading ${selectedKey}…`, `Загружаю ${selectedKey}…`)}</p>}
+      {lookupError && (
+        <p className="caption">
+          {lookupError === 'need-team' ? t('At least one team is required.', 'Нужна хотя бы одна команда.') : lookupError}
+        </p>
+      )}
 
       {selected && (
         <div className="stack" style={{ gap: 8 }}>
@@ -209,17 +216,17 @@ export function FlowIssueTimeline({
             </a>
             <span>{selected.summary}</span>
             <span className="caption">
-              {selected.assigneeName} · сейчас {selected.status}
+              {selected.assigneeName} · {t('now', 'сейчас')} {selected.status}
             </span>
           </div>
-          {selected.truncatedHint && <p className="caption">{selected.truncatedHint}</p>}
+          {selected.truncatedHint && <p className="caption">{timelineHint(selected.truncatedHint, t)}</p>}
           {allSegments.length === 0 || allSegments.reduce((sum, segment) => sum + segment.ms, 0) <= 0 ? (
-            <p className="caption">Нет переходов статусов в changelog этой задачи.</p>
+            <p className="caption">{t('This issue has no status transitions in its changelog.', 'Нет переходов статусов в changelog этой задачи.')}</p>
           ) : segments.length === 0 ? (
-            <p className="caption">После исключения статусов на линии ничего не осталось.</p>
+            <p className="caption">{t('Nothing is left on the line after excluding statuses.', 'После исключения статусов на линии ничего не осталось.')}</p>
           ) : (
             <>
-              <div className="flow-tl" role="img" aria-label={`Таймлайн статусов ${selected.key}`}>
+              <div className="flow-tl" role="img" aria-label={t(`Status timeline ${selected.key}`, `Таймлайн статусов ${selected.key}`)}>
                 <div className="flow-tl-bar">
                   {segments.map((segment, index) => (
                     <span
@@ -229,7 +236,7 @@ export function FlowIssueTimeline({
                         flexGrow: weights[index] ?? segment.days,
                         background: flowTimelineSegmentColor(segment),
                       }}
-                      title={`${formatStamp(segment.from)} → ${formatStamp(segment.to)} · ${segment.status} (${segment.stageLabel})`}
+                      title={`${formatStamp(segment.from)} → ${formatStamp(segment.to)} · ${segment.status} (${uiLabel(segment.stageLabel)})`}
                     />
                   ))}
                 </div>
@@ -248,9 +255,12 @@ export function FlowIssueTimeline({
               </div>
               <p className="caption">
                 {workingDays
-                  ? 'Длительности — рабочие дни, без суббот, воскресений и праздников.'
-                  : 'Длительности — календарные дни.'}{' '}
-                Сумма справа — все заходы в статус по этой задаче.
+                  ? t(
+                      'Durations are working days, without Saturdays, Sundays, and holidays.',
+                      'Длительности — рабочие дни, без суббот, воскресений и праздников.',
+                    )
+                  : t('Durations are calendar days.', 'Длительности — календарные дни.')}{' '}
+                {t('The total on the right is every visit to that status on this issue.', 'Сумма справа — все заходы в статус по этой задаче.')}
               </p>
               <div className="flow-tl-legend">
                 {totals.map((row) => (
@@ -271,11 +281,11 @@ export function FlowIssueTimeline({
                     <span className="cycle-chart-key">{formatStamp(segment.from)}</span>
                     <span>
                       {segment.status}
-                      <span className="caption"> · {segment.stageLabel}</span>
+                      <span className="caption"> · {uiLabel(segment.stageLabel)}</span>
                     </span>
                     <span className="caption">
                       {formatCycleDuration(segment.days)}
-                      {index === segments.length - 1 ? ' · сейчас' : ''}
+                      {index === segments.length - 1 ? ` · ${t('now', 'сейчас')}` : ''}
                     </span>
                   </li>
                 ))}
@@ -308,18 +318,22 @@ function timelineStatusOptions(
   return uniqueTimelineStatusNames(names);
 }
 
-function excludeSummary(excluded: string[]): string {
-  if (excluded.length === 0) return 'Исключить: ничего';
-  if (excluded.length === 1) return `Исключить: ${excluded[0]}`;
-  return `Исключить: ${excluded.length} ${statusWord(excluded.length)}`;
+function timelineHint(hint: string, t: (en: string, ru: string) => string): string {
+  if (hint === 'История статусов может быть обрезана (~100 событий в ответе Jira).') {
+    return t('Status history may be truncated (~100 events in the Jira response).', hint);
+  }
+  return hint;
 }
 
-function statusWord(count: number): string {
-  const n10 = count % 10;
-  const n100 = count % 100;
-  if (n10 === 1 && n100 !== 11) return 'статус';
-  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'статуса';
-  return 'статусов';
+function excludeSummary(excluded: string[], t: (en: string, ru: string) => string): string {
+  if (excluded.length === 0) return t('Exclude: none', 'Исключить: ничего');
+  if (excluded.length === 1) return t(`Exclude: ${excluded[0]}`, `Исключить: ${excluded[0]}`);
+  const n10 = excluded.length % 10;
+  const n100 = excluded.length % 100;
+  const ruWord =
+    n10 === 1 && n100 !== 11 ? 'статус' : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? 'статуса' : 'статусов';
+  const enWord = excluded.length === 1 ? 'status' : 'statuses';
+  return t(`Exclude: ${excluded.length} ${enWord}`, `Исключить: ${excluded.length} ${ruWord}`);
 }
 
 function axisMarks(

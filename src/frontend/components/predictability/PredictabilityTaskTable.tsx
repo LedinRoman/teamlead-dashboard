@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { Hint, Pill } from '@frontend/components/ui';
 import { formatStoryPoints } from '@backend/metrics/cycle-overview';
 import {
-  CATEGORY_HINTS,
-  METRIC_HINTS,
+  categoryHints,
+  metricHints,
   PREDICTABILITY_TABLE_CATEGORIES,
 } from '@backend/metrics/predictability-copy';
 import type {
@@ -12,16 +13,16 @@ import type {
   PredictabilityTask,
 } from '@backend/metrics/predictability-model';
 
-const LABELS: Record<PredictabilityCategory, string> = {
-  'committed-completed': 'Committed completed',
-  spillover: 'Spillover',
-  'still-unfinished': 'Still unfinished',
-  removed: 'Removed',
-  cancelled: 'Cancelled',
-  'added-completed': 'Added completed',
-  'added-unfinished': 'Added unfinished',
-  'already-done': 'Done before start',
-  excluded: 'Excluded',
+const LABELS: Record<PredictabilityCategory, [string, string]> = {
+  'committed-completed': ['Committed completed', 'Commitment выполнен'],
+  spillover: ['Spillover', 'Перенос'],
+  'still-unfinished': ['Still unfinished', 'Ещё не завершено'],
+  removed: ['Removed', 'Снято'],
+  cancelled: ['Cancelled', 'Отменено'],
+  'added-completed': ['Added completed', 'Добавлено и выполнено'],
+  'added-unfinished': ['Added unfinished', 'Добавлено, не завершено'],
+  'already-done': ['Done before start', 'Завершено до старта'],
+  excluded: ['Excluded', 'Исключено'],
 };
 
 const MEMBERSHIP = new Set<PredictabilityCategory>(PREDICTABILITY_TABLE_CATEGORIES);
@@ -35,6 +36,9 @@ export function PredictabilityTaskTable({
   category?: PredictabilityCategory;
   assigneeIds: string[];
 }) {
+  const { t, locale } = useI18n();
+  const hints = metricHints(locale);
+  const categories = categoryHints(locale);
   const membership = useMemo(
     () => tasks.filter((task) => MEMBERSHIP.has(task.category)),
     [tasks],
@@ -66,9 +70,9 @@ export function PredictabilityTaskTable({
     <div className="stack" style={{ gap: 8 }}>
       <div className="row">
         <label className="cycle-filter">
-          <span className="caption">Type</span>
+          <span className="caption">{t('Type', 'Тип')}</span>
           <select className="cycle-def-select" value={type} onChange={(event) => setType(event.target.value)}>
-            <option value="">All</option>
+            <option value="">{t('All', 'Все')}</option>
             {types.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -77,25 +81,25 @@ export function PredictabilityTaskTable({
           </select>
         </label>
         <label className="cycle-filter">
-          <span className="caption">Estimate</span>
+          <span className="caption">{t('Estimate', 'Оценка')}</span>
           <select
             className="cycle-def-select"
             value={estimate}
             onChange={(event) => setEstimate(event.target.value as typeof estimate)}
           >
-            <option value="all">All</option>
-            <option value="estimated">Estimated</option>
-            <option value="unestimated">No SP</option>
+            <option value="all">{t('All', 'Все')}</option>
+            <option value="estimated">{t('Estimated', 'С оценкой')}</option>
+            <option value="unestimated">{t('No SP', 'Без SP')}</option>
           </select>
         </label>
         <label className="cycle-filter">
-          <span className="caption">Carry-overs ≥</span>
+          <span className="caption">{t('Carry-overs ≥', 'Переносы ≥')}</span>
           <select
             className="cycle-def-select"
             value={minSpillovers}
             onChange={(event) => setMinSpillovers(Number(event.target.value))}
           >
-            <option value={0}>Any</option>
+            <option value={0}>{t('Any', 'Любое')}</option>
             <option value={1}>1</option>
             <option value={2}>2+</option>
           </select>
@@ -106,43 +110,53 @@ export function PredictabilityTaskTable({
             checked={estimateChanged}
             onChange={(event) => setEstimateChanged(event.target.checked)}
           />{' '}
-          estimate changed
+          {t('estimate changed', 'оценка менялась')}
         </label>
       </div>
       {rows.length === 0 ? (
-        <p className="caption">No issues match the selected filters.</p>
+        <p className="caption">{t('No issues match the selected filters.', 'Нет задач по выбранным фильтрам.')}</p>
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Summary</th>
-                <th>Type</th>
+                <th>{t('Key', 'Ключ')}</th>
+                <th>{t('Summary', 'Название')}</th>
+                <th>{t('Type', 'Тип')}</th>
                 <th className="num">
-                  <Hint text={METRIC_HINTS.spBaseline}>SP baseline</Hint>
+                  <Hint text={hints.spBaseline}>{t('SP baseline', 'SP baseline')}</Hint>
                 </th>
                 <th className="num">
-                  <Hint text={METRIC_HINTS.spNow}>SP now</Hint>
+                  <Hint text={hints.spNow}>{t('SP now', 'SP сейчас')}</Hint>
                 </th>
                 <th>
-                  <Hint text="Category by sprint membership: at the start, added, or removed. Epics and issues done before the start are hidden.">
-                    Category
+                  <Hint
+                    text={t(
+                      'Category by sprint membership: at the start, added, or removed. Epics and issues done before the start are hidden.',
+                      'Категория по членству в спринте: на старте, добавлена или снята. Эпики и задачи, завершённые до старта, скрыты.',
+                    )}
+                  >
+                    {t('Category', 'Категория')}
                   </Hint>
                 </th>
                 <th>
-                  <Hint text={METRIC_HINTS.created}>Created</Hint>
+                  <Hint text={hints.created}>{t('Created', 'Создана')}</Hint>
                 </th>
-                <th>Added</th>
-                <th>Removed</th>
+                <th>{t('Added', 'Добавлена')}</th>
+                <th>{t('Removed', 'Снята')}</th>
                 <th>
-                  <Hint text="First transition into review. That is the completion moment for predictability, not the Done status.">
-                    Review
+                  <Hint
+                    text={t(
+                      'First transition into review. That is the completion moment for predictability, not the Done status.',
+                      'Первый переход в проверку. Для predictability это момент выполнения, а не статус Готово.',
+                    )}
+                  >
+                    {t('Review', 'Проверка')}
                   </Hint>
                 </th>
-                <th>Status</th>
+                <th>{t('Status', 'Статус')}</th>
                 <th className="num">
-                  <Hint text={METRIC_HINTS.spillovers}>Carry-overs</Hint>
+                  <Hint text={hints.spillovers}>{t('Carry-overs', 'Переносы')}</Hint>
                 </th>
               </tr>
             </thead>
@@ -161,11 +175,11 @@ export function PredictabilityTaskTable({
                     {task.currentStoryPoints === undefined ? '—' : formatStoryPoints(task.currentStoryPoints)}
                   </td>
                   <td>
-                    <Pill tone={pillTone(task.category)} title={originHint(task)}>
-                      {LABELS[task.category]}
+                    <Pill tone={pillTone(task.category)} title={originHint(task, categories, t)}>
+                      {t(LABELS[task.category][0], LABELS[task.category][1])}
                     </Pill>
                   </td>
-                  <td title={originHint(task)}>{day(task.created)}</td>
+                  <td title={originHint(task, categories, t)}>{day(task.created)}</td>
                   <td>{day(task.addedAt)}</td>
                   <td>{day(task.removedAt)}</td>
                   <td>{day(task.doneAt)}</td>
@@ -181,11 +195,17 @@ export function PredictabilityTaskTable({
   );
 }
 
-function originHint(task: PredictabilityTask): string {
-  const category = CATEGORY_HINTS[task.category];
+function originHint(
+  task: PredictabilityTask,
+  categories: Record<PredictabilityCategory, string>,
+  t: (en: string, ru: string) => string,
+): string {
+  const category = categories[task.category];
   if (task.category === 'removed' || task.category.startsWith('added')) return category;
-  if (task.createdInSprint) return `${category} Created during this sprint.`;
-  return `${category} Older key carried in: it was already in this sprint at the start.`;
+  if (task.createdInSprint) {
+    return `${category} ${t('Created during this sprint.', 'Создана в этом спринте.')}`;
+  }
+  return `${category} ${t('Older key carried in: it was already in this sprint at the start.', 'Старый ключ — перенос: задача уже была в этом спринте на старте.')}`;
 }
 
 function day(iso?: string): string {

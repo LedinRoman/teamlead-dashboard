@@ -19,6 +19,7 @@
   "include": [
     "../src/backend/metrics/**/*.ts",
     "../src/backend/jira/jql.ts",
-    "../src/shared/types.ts"
+    "../src/shared/types.ts",
+    "../src/shared/locale.ts"
   ]
 }

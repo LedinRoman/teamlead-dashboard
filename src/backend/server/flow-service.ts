@@ -1,4 +1,5 @@
 import { listCycleOverrides } from '@backend/db/cycle-overrides';
+import { serverTr } from '@backend/server/locale';
 import { listHolidays } from '@backend/db/holidays';
 import { getFlowWorkflow } from '@backend/db/settings';
 import { andAll, jqlList, jqlValue } from '@backend/jira/jql';
@@ -163,7 +164,12 @@ async function loadFlowInner(request: FlowLoadRequest, ctx: AppContext): Promise
     agingSprints,
   });
   if (truncated) {
-    snapshot.warnings.unshift('Поиск обрезан лимитом Jira (~2500 задач). Часть потока может отсутствовать.');
+    snapshot.warnings.unshift(
+      serverTr(
+        'Jira truncated the search (~2500 issues). Part of the flow may be missing.',
+        'Поиск обрезан лимитом Jira (~2500 задач). Часть потока может отсутствовать.',
+      ),
+    );
   }
   const stamped = stampFlow(snapshot, false);
   await computedWrite('flow', modelParts, stamped);
@@ -177,17 +183,25 @@ export async function loadFlowIssue(request: FlowIssueLoadRequest, context?: App
 
 async function loadFlowIssueInner(request: FlowIssueLoadRequest, ctx: AppContext): Promise<FlowIssueTimeline> {
   const key = parseIssueKeys(request.key)[0];
-  if (!key) throw new ValidationError('Нужен ключ задачи, например CDR-2029.');
-  if (request.teamIds.length === 0) throw new ValidationError('Нужна хотя бы одна команда.');
+  if (!key) throw new ValidationError(serverTr('Need one issue key, for example CDR-2029.', 'Нужен ключ задачи, например CDR-2029.'));
+  if (request.teamIds.length === 0) throw new ValidationError(serverTr('Pick at least one team.', 'Нужна хотя бы одна команда.'));
 
   const projects = teamProjectKeys(request.teamIds, ctx.teams);
   if (projects.length === 0) {
-    throw new ValidationError('У выбранных команд нет проектов. Добавьте их на странице Teams.');
+    throw new ValidationError(
+      serverTr(
+        'The selected teams have no projects. Add them on the Teams page.',
+        'У выбранных команд нет проектов. Добавьте их на странице Teams.',
+      ),
+    );
   }
   const project = projectOfKey(key);
   if (!projects.some((item) => item.toUpperCase() === project)) {
     throw new ValidationError(
-      `${key} не из проектов выбранных команд (${projects.join(', ')}).`,
+      serverTr(
+        `${key} is not in the selected teams' projects (${projects.join(', ')}).`,
+        `${key} не из проектов выбранных команд (${projects.join(', ')}).`,
+      ),
     );
   }
 
@@ -217,7 +231,14 @@ async function loadFlowIssueInner(request: FlowIssueLoadRequest, ctx: AppContext
   applyOverrides(dataset.normalized.issues, cycleOverrideMaps(await listCycleOverrides()));
   const issue =
     dataset.normalized.issues.find((row) => row.key.toUpperCase() === key) ?? dataset.normalized.issues[0];
-  if (!issue) throw new ValidationError(`Задача ${key} не найдена в проектах выбранных команд.`);
+  if (!issue) {
+    throw new ValidationError(
+      serverTr(
+        `Issue ${key} was not found in the selected teams' projects.`,
+        `Задача ${key} не найдена в проектах выбранных команд.`,
+      ),
+    );
+  }
   return toFlowIssueTimeline(issue);
 }
 

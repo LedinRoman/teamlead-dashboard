@@ -1,8 +1,9 @@
 import { Fragment, useMemo, useState } from 'react';
 
+import { useI18n } from '@frontend/i18n/locale';
 import { Hint, Pill } from '@frontend/components/ui';
 import { formatCycleDuration } from '@backend/metrics/cycle-overview';
-import { QUALITY_HINTS } from '@backend/metrics/quality-copy';
+import { qualityHints } from '@backend/metrics/quality-copy';
 import type { QualityCycle, QualityIssueRow } from '@backend/metrics/quality-model';
 
 export type QualityTableFilter =
@@ -28,6 +29,8 @@ export function QualityTaskTable({
   filter: QualityTableFilter;
   assigneeIds: string[];
 }) {
+  const { t, locale } = useI18n();
+  const hints = qualityHints(locale);
   const types = useMemo(
     () => [...new Set(issues.map((issue) => issue.type))].sort((a, b) => a.localeCompare(b, 'ru')),
     [issues],
@@ -59,9 +62,9 @@ export function QualityTaskTable({
     <div className="stack" style={{ gap: 8 }}>
       <div className="row">
         <label className="cycle-filter">
-          <span className="caption">Type</span>
+          <span className="caption">{t('Type', 'Тип')}</span>
           <select className="cycle-def-select" value={type} onChange={(event) => setType(event.target.value)}>
-            <option value="">All</option>
+            <option value="">{t('All', 'Все')}</option>
             {types.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -70,29 +73,29 @@ export function QualityTaskTable({
           </select>
         </label>
         <span className="caption">
-          {rows.length} of {issues.length} · filter: {filterLabel(filter)}
+          {t(`${rows.length} of ${issues.length}`, `${rows.length} из ${issues.length}`)} · {t('filter', 'фильтр')}: {filterLabel(filter, t)}
         </span>
       </div>
       {rows.length === 0 ? (
-        <p className="caption">No issues match the selected filters.</p>
+        <p className="caption">{t('No issues match the selected filters.', 'Нет задач по выбранным фильтрам.')}</p>
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Summary</th>
-                <th>Type</th>
-                <th>Assignee</th>
+                <th>{t('Key', 'Ключ')}</th>
+                <th>{t('Summary', 'Название')}</th>
+                <th>{t('Type', 'Тип')}</th>
+                <th>{t('Assignee', 'Исполнитель')}</th>
                 <th>
-                  <Hint text={QUALITY_HINTS.firstQa}>First QA</Hint>
+                  <Hint text={hints.firstQa}>{t('First QA', 'First QA')}</Hint>
                 </th>
                 <th className="num">
-                  <Hint text={QUALITY_HINTS.returns}>Returns</Hint>
+                  <Hint text={hints.returns}>{t('Returns', 'Возвраты')}</Hint>
                 </th>
-                <th>Cycles</th>
-                <th>History</th>
-                <th>Status</th>
+                <th>{t('Cycles', 'Циклы')}</th>
+                <th>{t('History', 'История')}</th>
+                <th>{t('Status', 'Статус')}</th>
               </tr>
             </thead>
             <tbody>
@@ -118,15 +121,15 @@ export function QualityTaskTable({
                         {issue.firstQaTo ? ` → ${issue.firstQaTo}` : ''}
                       </td>
                       <td className="num">{issue.returnCount}</td>
-                      <td>{cycleSummary(issue)}</td>
+                      <td>{cycleSummary(issue, t)}</td>
                       <td>
-                        <Pill tone={historyTone(issue.historyQuality)}>{historyLabel(issue.historyQuality)}</Pill>
+                        <Pill tone={historyTone(issue.historyQuality)}>{historyLabel(issue.historyQuality, t)}</Pill>
                       </td>
                       <td>{issue.status}</td>
                     </tr>
                     {open && (
                       <tr className="quality-detail">
-                        <td colSpan={9}>{cycleDetails(issue)}</td>
+                        <td colSpan={9}>{cycleDetails(issue, t)}</td>
                       </tr>
                     )}
                   </Fragment>
@@ -140,57 +143,76 @@ export function QualityTaskTable({
   );
 }
 
-function cycleSummary(issue: QualityIssueRow): string {
+function cycleSummary(issue: QualityIssueRow, t: (en: string, ru: string) => string): string {
   const parts: string[] = [];
-  if (issue.completedCycles.length) parts.push(`${issue.completedCycles.length} closed`);
-  if (issue.interruptedCycles.length) parts.push(`${issue.interruptedCycles.length} interrupted`);
-  if (issue.openCycle) parts.push('open');
+  if (issue.completedCycles.length) {
+    parts.push(t(`${issue.completedCycles.length} closed`, `${issue.completedCycles.length} закрыто`));
+  }
+  if (issue.interruptedCycles.length) {
+    parts.push(t(`${issue.interruptedCycles.length} interrupted`, `${issue.interruptedCycles.length} прервано`));
+  }
+  if (issue.openCycle) parts.push(t('open', 'открыт'));
   return parts.join(' · ') || '—';
 }
 
-function cycleDetails(issue: QualityIssueRow) {
+function cycleDetails(issue: QualityIssueRow, t: (en: string, ru: string) => string) {
   const cycles: QualityCycle[] = [
     ...issue.completedCycles,
     ...issue.interruptedCycles,
     ...(issue.openCycle ? [issue.openCycle] : []),
   ];
   if (cycles.length === 0) {
-    return <p className="caption">No returns to Fix. That is not proof of first pass yield until the issue is Done.</p>;
+    return (
+      <p className="caption">
+        {t(
+          'No returns to Fix. That is not proof of first pass yield until the issue is Done.',
+          'Нет возвратов в Fix. Это не доказательство first pass yield, пока задача не в Готово.',
+        )}
+      </p>
+    );
   }
   return (
     <ul className="quality-cycles">
       {issue.returns.map((event, index) => (
         <li key={`${event.at}-return-${index}`}>
-          <strong>Return</strong>
+          <strong>{t('Return', 'Возврат')}</strong>
           {' · '}
-          {formatStamp(event.at)} · {event.from} → {event.to} · {event.reasonLabel}
+          {formatStamp(event.at)} · {event.from} → {event.to} · {reasonLabel(event.reasonLabel, t)}
         </li>
       ))}
       {cycles.map((cycle, index) => (
         <li key={`${cycle.startedAt}-${cycle.kind}-${index}`}>
-          <strong>{cycleKindLabel(cycle)}</strong>
+          <strong>{cycleKindLabel(cycle, t)}</strong>
           {' · '}
           {formatStamp(cycle.startedAt)}
-          {cycle.endedAt ? ` → ${formatStamp(cycle.endedAt)}` : ' → now'}
+          {cycle.endedAt ? ` → ${formatStamp(cycle.endedAt)}` : ` → ${t('now', 'сейчас')}`}
           {cycle.durationDays !== undefined ? ` · ${formatCycleDuration(cycle.durationDays)}` : ''}
-          {cycle.ageDays !== undefined ? ` · age ${formatCycleDuration(cycle.ageDays)}` : ''}
-          {cycle.interruptReason === 'done' ? ' · interrupted by Done' : ''}
+          {cycle.ageDays !== undefined ? ` · ${t('age', 'возраст')} ${formatCycleDuration(cycle.ageDays)}` : ''}
+          {cycle.interruptReason === 'done' ? ` · ${t('interrupted by Done', 'прерван переходом в Готово')}` : ''}
         </li>
       ))}
     </ul>
   );
 }
 
-function cycleKindLabel(cycle: QualityCycle): string {
-  if (cycle.kind === 'completed') return 'Completed';
-  if (cycle.kind === 'interrupted') return 'Interrupted';
-  return 'Open';
+function reasonLabel(label: string, t: (en: string, ru: string) => string): string {
+  if (label === 'Не записана') return t('Not recorded', 'Не записана');
+  if (label === 'Комментарий') return t('Comment', 'Комментарий');
+  if (label === 'Метка') return t('Label', 'Метка');
+  if (label.startsWith('Метка: ')) return t(`Label: ${label.slice('Метка: '.length)}`, label);
+  return label;
 }
 
-function historyLabel(quality: QualityIssueRow['historyQuality']): string {
-  if (quality === 'exact') return 'complete';
-  if (quality === 'partial') return 'partial';
-  return 'no history';
+function cycleKindLabel(cycle: QualityCycle, t: (en: string, ru: string) => string): string {
+  if (cycle.kind === 'completed') return t('Completed', 'Завершён');
+  if (cycle.kind === 'interrupted') return t('Interrupted', 'Прерван');
+  return t('Open', 'Открыт');
+}
+
+function historyLabel(quality: QualityIssueRow['historyQuality'], t: (en: string, ru: string) => string): string {
+  if (quality === 'exact') return t('complete', 'полная');
+  if (quality === 'partial') return t('partial', 'частичная');
+  return t('no history', 'нет истории');
 }
 
 function historyTone(quality: QualityIssueRow['historyQuality']): 'neutral' | 'warning' | 'danger' {
@@ -199,32 +221,32 @@ function historyTone(quality: QualityIssueRow['historyQuality']): 'neutral' | 'w
   return 'danger';
 }
 
-function filterLabel(filter: QualityTableFilter): string {
+function filterLabel(filter: QualityTableFilter, t: (en: string, ru: string) => string): string {
   switch (filter) {
     case 'returns':
-      return 'has returns';
+      return t('has returns', 'есть возвраты');
     case 'repeated':
-      return 'repeated returns';
+      return t('repeated returns', 'повторные возвраты');
     case 'completed':
-      return 'completed cycles';
+      return t('completed cycles', 'завершённые циклы');
     case 'open':
-      return 'open cycles';
+      return t('open cycles', 'открытые циклы');
     case 'unknown':
-      return 'incomplete history';
+      return t('incomplete history', 'неполная история');
     case 'zero':
-      return 'no returns';
+      return t('no returns', 'нет возвратов');
     case 'one':
-      return 'one return';
+      return t('one return', 'один возврат');
     case 'two':
-      return 'two returns';
+      return t('two returns', 'два возврата');
     case 'threePlus':
-      return '3+ returns';
+      return t('3+ returns', '3+ возврата');
     case 'firstPass':
-      return 'first pass, no return';
+      return t('first pass, no return', 'первый проход без возврата');
     case 'pending':
-      return 'first pass still open';
+      return t('first pass still open', 'первый проход ещё открыт');
     default:
-      return 'all cohort issues';
+      return t('all cohort issues', 'все задачи когорты');
   }
 }
 

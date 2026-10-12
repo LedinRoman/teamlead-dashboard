@@ -49,7 +49,7 @@ export const QUALITY_FORMULAS = {
   fpy: 'FPY = Passed / (Passed + Failed); Passed = 0 возвратов и Готово; Failed = ≥1 QA→Fix; Pending (0 возвратов, ещё не Готово) вне знаменателя; при nUnknown > 0 недоступен',
 } as const;
 
-export const QUALITY_HINTS = {
+const QUALITY_HINTS_RU = {
   rate: 'Доля задач когорты, у которых был хотя бы один переход из QA-группы в Fix. Не First Pass Yield. При неполной истории процент недоступен, а не 0%.',
   loops: 'Число завершённых rework-циклов: от возврата в Fix до следующего входа в Ready to QA или Проверку. Прерванные Готово и открытые циклы сюда не входят.',
   repeated: 'Сколько задач когорты вернулись в Fix дважды или чаще.',
@@ -66,3 +66,25 @@ export const QUALITY_HINTS = {
   defects: 'Баги и инциденты, созданные в окне спринта, с признаком production. Находки QA из когорты First QA сюда не входят.',
   bugsAfterTest: 'Сверка поля bugs after test со счётчиком QA→Fix. Поле не двигает карточки Quality.',
 } as const;
+
+export const QUALITY_HINTS = {
+  rate: 'Share of the cohort with at least one QA-group → Fix transition. This is not First Pass Yield. Incomplete history hides the percent instead of showing 0%.',
+  loops: 'Completed rework cycles: from a return into Fix until the next entry into Ready to QA or Review. Interrupted Done and open cycles are not included.',
+  repeated: 'How many cohort issues returned to Fix twice or more.',
+  reworkTime: 'Median and P85 of completed cycles: time until the work is handed back to QA, without the later review wait. Open and interrupted cycles are excluded.',
+  firstQa: 'The first entry into Ready to QA or Review in the issue history. The sprint cohort uses that date, not the current Sprint field.',
+  returns: 'Count of QA-group → Fix transitions. Moves inside QA, and QA → In Progress, are not returns.',
+  distribution:
+    'How many cohort issues have 0, 1, 2, or 3+ observed returns. 0 means no return yet, not First Pass Yield. Unknown is incomplete history and is not put in the zero bucket.',
+  openCycles: 'An open cycle after QA → Fix, until the issue returns to QA or reaches Done. Age runs to the snapshot. This is not Flow rework.',
+  history:
+    'Each sprint has its own First QA cohort and its own Return Rate. A late return stays in the original cohort. The active sprint is marked incomplete and is not in the closed total.',
+  fpy: 'Share of issues that passed the first QA without a return to Fix and have already reached Done. Still in review does not count. Incomplete history hides the percent.',
+  reasons: 'What was on the same changelog event as QA → Fix. This is not a defect taxonomy and not a rating of people.',
+  defects: 'Bugs and incidents created in the sprint window with a production signal. QA findings from the First QA cohort are not included.',
+  bugsAfterTest: 'Compares the bugs-after-test field with the QA → Fix count. The field does not move the Quality cards.',
+} as const;
+
+export function qualityHints(locale: 'en' | 'ru') {
+  return locale === 'ru' ? QUALITY_HINTS_RU : QUALITY_HINTS;
+}

@@ -1,4 +1,5 @@
 import type { ApiErrorBody } from '@shared/api';
+import { activeLocale, tr } from '@shared/locale';
 
 export class ApiError extends Error {
   readonly code: ApiErrorBody['code'];
@@ -27,11 +28,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(path, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Locale': activeLocale(),
+        ...(init?.headers ?? {}),
+      },
     });
   } catch (error) {
     throw new ApiError(
-      'The local server did not respond. Is `npm run dev` still running?',
+      tr(
+        'The local server did not respond. Is the app still running?',
+        'Локальный сервер не ответил. Приложение ещё запущено?',
+      ),
       0,
       'server',
       error instanceof Error ? error.message : undefined,

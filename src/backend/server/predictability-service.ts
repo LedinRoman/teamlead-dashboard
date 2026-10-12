@@ -1,4 +1,5 @@
 import { listCycleOverrides } from '@backend/db/cycle-overrides';
+import { serverTr } from '@backend/server/locale';
 import { getFlowWorkflow } from '@backend/db/settings';
 import { andAll, jqlList, jqlValue, orAll, ORDER_RECENT, withOrderBy } from '@backend/jira/jql';
 import type { FieldMapping, JiraSprintOption, NormalizedIssue, Team } from '@shared/types';
@@ -59,7 +60,7 @@ async function loadPredictabilityInner(
   ctx: AppContext,
 ): Promise<PredictabilityPayload> {
   if (request.teamIds.length === 0) {
-    throw new Error('Нужна хотя бы одна команда.');
+    throw new Error(serverTr('Pick at least one team.', 'Нужна хотя бы одна команда.'));
   }
 
   const storedWorkflow = await getFlowWorkflow();
@@ -89,7 +90,7 @@ async function loadPredictabilityInner(
   const sprints = sortSprintsOldestFirst(await collectTeamSprints(teams, ctx.client));
   const selected = sprints.find((sprint) => sprint.id === request.sprintId);
   if (!selected) {
-    throw new Error('Выбранный спринт не найден на досках команды.');
+    throw new Error(serverTr('That sprint is not on the team boards.', 'Выбранный спринт не найден на досках команды.'));
   }
 
   const current = await computeSprint(selected, sprints, teams, workflow, request, ctx, overrides);
@@ -167,7 +168,12 @@ async function computeSprint(
   });
 
   if (dataset.truncated) {
-    snapshot.warnings.unshift('Поиск обрезан лимитом Jira. Часть состава спринта может отсутствовать.');
+    snapshot.warnings.unshift(
+      serverTr(
+        'Jira truncated the search. Part of the sprint may be missing.',
+        'Поиск обрезан лимитом Jira. Часть состава спринта может отсутствовать.',
+      ),
+    );
   }
 
   const reconstructed = new Set(snapshot.tasks.map((task) => task.key));
@@ -180,7 +186,10 @@ async function computeSprint(
   ).length;
   if (unexplained > 0) {
     snapshot.warnings.push(
-      `${unexplained} задач сейчас числятся в спринте, но история поля Sprint не восстановилась — они не вошли в baseline`,
+      serverTr(
+        `${unexplained} issues are in the sprint now, but the Sprint field history could not be rebuilt, so they are not in the baseline`,
+        `${unexplained} задач сейчас числятся в спринте, но история поля Sprint не восстановилась — они не вошли в baseline`,
+      ),
     );
   }
 

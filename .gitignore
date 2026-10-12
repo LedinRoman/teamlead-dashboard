@@ -21,6 +21,12 @@ data/
 .tmp-*
 *.tsbuildinfo
 
+# desktop bundles
+desktop/node_modules/
+desktop/bundle/
+dist-desktop/
+.tmp-desktop/
+
 # logs
 *.log
 npm-debug.log*

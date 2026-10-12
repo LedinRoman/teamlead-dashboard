@@ -500,12 +500,12 @@ check('faster median is an improvement', faster.tone, 'success');
 check('faster median names the other sprint', faster.text.includes('Спринт 21') && faster.text.includes('↓'), true);
 const slower = formatCycleCompare(3, 1, 'Спринт 21');
 check('slower p85 is a regression', slower.tone, 'danger');
-check('missing compare data', formatCycleCompare(1, null, 'Спринт 18').text.includes('нет данных'), true);
+check('missing compare data', formatCycleCompare(1, null, 'Спринт 18').text.includes('no data'), true);
 
 const charts = fs.readFileSync(path.join(__dirname, '../src/frontend/components/charts.tsx'), 'utf8');
 check('overview has no [QA] checkbox', overview.includes('Исключить [QA]'), false);
 const settingsPage = fs.readFileSync(path.join(__dirname, '../src/app/settings/page.tsx'), 'utf8');
-check('settings has the [QA] checkbox', settingsPage.includes('Исключить [QA]'), true);
+check('settings has no [QA] checkbox', settingsPage.includes('Исключить [QA]'), false);
 check('overview has a people filter', overview.includes('Люди') && overview.includes('overview-people'), true);
 check('overview has compare-sprint control', overview.includes('Сравнить с'), true);
 check('compare uses a checkbox dropdown', overview.includes('compareSprintIds') && overview.includes('CheckDropdown'), true);
@@ -985,7 +985,7 @@ check(
 check('calendar fixtures still match summarize()', model.median, expectedSummary.median);
 check(
   'overview has calendar/working switcher',
-  overview.includes("label: 'Календарные'") && overview.includes("label: 'Рабочие'"),
+  overview.includes('Календарные') && overview.includes('Рабочие'),
   true,
 );
 check('overview has holidays dialog', overview.includes('HolidaysDialog') && overview.includes('Праздники'), true);

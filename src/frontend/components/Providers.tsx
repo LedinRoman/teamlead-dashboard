@@ -2,8 +2,13 @@
 
 import type { ReactNode } from 'react';
 
+import { LocaleProvider } from '@frontend/i18n/locale';
 import { AppDataProvider } from '@frontend/lib/app-data';
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <AppDataProvider>{children}</AppDataProvider>;
+  return (
+    <LocaleProvider>
+      <AppDataProvider>{children}</AppDataProvider>
+    </LocaleProvider>
+  );
 }

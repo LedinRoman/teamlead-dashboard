@@ -1,4 +1,5 @@
 import { clampHistory, loadPredictability } from '@backend/server/predictability-service';
+import { apiText, withLocale } from '@backend/server/locale';
 import { badRequest, failure, ok, readJson } from '@backend/server/responses';
 import { parseIssueKeys } from '@backend/metrics/cycle-overview';
 import { parseStatusName } from '@backend/server/validate';
@@ -18,13 +19,17 @@ interface PredictabilityBody {
   refresh?: unknown;
 }
 
-export async function POST(request: Request) {
+export function POST(request: Request) {
+  return withLocale(request, () => postPredictability(request));
+}
+
+async function postPredictability(request: Request) {
   try {
     const body = await readJson<PredictabilityBody>(request);
     const teamIds = stringList(body.teamIds);
     const sprintId = Number(body.sprintId);
-    if (teamIds.length === 0) return badRequest('Нужна хотя бы одна команда.');
-    if (!Number.isInteger(sprintId)) return badRequest('Нужен спринт.');
+    if (teamIds.length === 0) return badRequest(apiText(request, 'Pick at least one team.', 'Нужна хотя бы одна команда.'));
+    if (!Number.isInteger(sprintId)) return badRequest(apiText(request, 'Pick a sprint.', 'Нужен спринт.'));
     const compareRaw = Number(body.compareSprintId);
     const excludedKeys =
       typeof body.excludedKeys === 'string'
