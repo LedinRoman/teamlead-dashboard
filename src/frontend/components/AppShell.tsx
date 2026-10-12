@@ -15,7 +15,7 @@ interface NavItem {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
   const { connected, connections, teams, loading } = useAppData();
   const activeConnection = connections[0];
 
@@ -59,14 +59,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div style={{ marginTop: 'auto' }} className="stack">
-          <div className="locale-switch" role="group" aria-label={t('Language', 'Язык')}>
-            <button type="button" data-active={locale === 'en'} onClick={() => setLocale('en')}>
-              EN
-            </button>
-            <button type="button" data-active={locale === 'ru'} onClick={() => setLocale('ru')}>
-              RU
-            </button>
-          </div>
           {!loading && (
             <div className="caption" style={{ padding: '0 6px' }}>
               {connected && activeConnection ? (

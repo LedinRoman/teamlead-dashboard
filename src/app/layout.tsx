@@ -16,10 +16,13 @@ export const metadata: Metadata = {
   },
 };
 
+const themeBoot = `(function(){try{var t=localStorage.getItem('tld.theme');if(t==='light'||t==='dark'||t==='paper'||t==='sea'||t==='dusk')document.documentElement.dataset.theme=t;}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, dialog, Menu, nativeTheme, shell } = require('electron');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const http = require('node:http');
@@ -9,6 +9,86 @@ const APP_TITLE = 'Team Lead Dashboard';
 
 let serverProcess;
 let mainWindow;
+let splashWindow;
+
+function bootFraction(elapsed) {
+  if (elapsed < 18000) return 0.06 + (elapsed / 18000) * 0.82;
+  return Math.min(0.96, 0.88 + (1 - Math.exp(-(elapsed - 18000) / 12000)) * 0.08);
+}
+
+function bootLabel(elapsed, phase) {
+  if (phase === 'open') return 'Opening';
+  if (elapsed < 700) return 'Starting';
+  return 'Loading the dashboard';
+}
+
+function openSplash() {
+  const background = nativeTheme.shouldUseDarkColors ? '#101216' : '#f7f8fa';
+  const splash = new BrowserWindow({
+    width: 440,
+    height: 280,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    center: true,
+    alwaysOnTop: true,
+    show: false,
+    backgroundColor: background,
+    title: APP_TITLE,
+    icon: path.join(__dirname, 'icon.png'),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  splashWindow = splash;
+  let ready = false;
+  const queued = [];
+  const send = (fraction, label) => {
+    const script = `window.setBoot && window.setBoot(${Number(fraction)}, ${JSON.stringify(label)})`;
+    if (ready && !splash.isDestroyed()) void splash.webContents.executeJavaScript(script);
+    else queued.push(script);
+  };
+  splash.webContents.once('did-finish-load', () => {
+    ready = true;
+    for (const script of queued) {
+      if (!splash.isDestroyed()) void splash.webContents.executeJavaScript(script);
+    }
+    queued.length = 0;
+  });
+  splash.once('ready-to-show', () => {
+    if (!splash.isDestroyed()) splash.show();
+  });
+  void splash.loadFile(path.join(__dirname, 'splash.html'));
+
+  const started = Date.now();
+  let phase = 'boot';
+  send(0.04, 'Starting');
+  const timer = setInterval(() => {
+    if (splash.isDestroyed() || phase === 'open') return;
+    const elapsed = Date.now() - started;
+    send(bootFraction(elapsed), bootLabel(elapsed, phase));
+  }, 200);
+
+  return {
+    opening() {
+      phase = 'open';
+      send(0.94, 'Opening');
+    },
+    finish() {
+      clearInterval(timer);
+      send(1, 'Opening');
+    },
+    close() {
+      clearInterval(timer);
+      if (!splash.isDestroyed()) splash.close();
+      if (splashWindow === splash) splashWindow = undefined;
+    },
+  };
+}
 
 function resourcesDir() {
   return app.isPackaged ? process.resourcesPath : path.join(__dirname, 'bundle');
@@ -123,10 +203,6 @@ function openWindow(port) {
     },
   });
   mainWindow = win;
-  win.once('ready-to-show', () => {
-    win.show();
-    win.focus();
-  });
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(origin)) void shell.openExternal(url);
     return { action: 'deny' };
@@ -137,7 +213,14 @@ function openWindow(port) {
       void shell.openExternal(url);
     }
   });
-  void win.loadURL(origin);
+  return new Promise((resolve, reject) => {
+    win.once('ready-to-show', () => resolve(win));
+    win.webContents.once('did-fail-load', (_event, code, description, _url, isMainFrame) => {
+      if (isMainFrame === false) return;
+      reject(new Error(description || `Could not open the dashboard (${code}).`));
+    });
+    void win.loadURL(origin);
+  });
 }
 
 function stopServer() {
@@ -152,16 +235,25 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
+    const target = mainWindow && !mainWindow.isDestroyed() ? mainWindow : splashWindow;
+    if (!target || target.isDestroyed()) return;
+    if (target.isMinimized()) target.restore();
+    target.focus();
   });
 
   app.whenReady().then(async () => {
+    const splash = openSplash();
     try {
       const port = await startServer();
-      openWindow(port);
+      splash.opening();
+      const win = await openWindow(port);
+      splash.finish();
+      win.show();
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      splash.close();
+      if (!win.isDestroyed()) win.focus();
     } catch (error) {
+      splash.close();
       dialog.showErrorBox(APP_TITLE, error instanceof Error ? error.message : 'Could not start.');
       app.quit();
     }

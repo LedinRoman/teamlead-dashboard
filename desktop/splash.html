@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Team Lead Dashboard</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f8fa;
+        --text: #16191d;
+        --muted: #626b78;
+        --track: #e2e5ea;
+        --fill: #1d4ed8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216;
+          --text: #e8eaee;
+          --muted: #9aa3b1;
+          --track: #282d35;
+          --fill: #6f9dea;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .panel {
+        width: 320px;
+        text-align: center;
+      }
+      img {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: block;
+        margin: 0 auto 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 6px 0 18px;
+        min-height: 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--track);
+        overflow: hidden;
+      }
+      .fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--fill);
+        transition: width 180ms linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <img src="icon.png" alt="" />
+      <h1>Team Lead Dashboard</h1>
+      <p id="status">Starting</p>
+      <div class="track" id="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Starting">
+        <div class="fill" id="fill"></div>
+      </div>
+    </div>
+    <script>
+      const status = document.getElementById('status');
+      const fill = document.getElementById('fill');
+      const bar = document.getElementById('bar');
+      window.setBoot = (fraction, label) => {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(fraction) * 100)));
+        fill.style.width = pct + '%';
+        bar.setAttribute('aria-valuenow', String(pct));
+        if (label) {
+          status.textContent = label;
+          bar.setAttribute('aria-label', label);
+        }
+      };
+    </script>
+  </body>
+</html>

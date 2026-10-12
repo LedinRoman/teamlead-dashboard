@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { useI18n } from '@frontend/i18n/locale';
+import { ThemePicker } from '@frontend/theme/theme';
 import { Callout, Card, Field, Pill, Segmented } from '@frontend/components/ui';
 import { apiDelete, apiGet, apiPatch, apiPost, errorMessage } from '@frontend/lib/api';
 import { useAppData } from '@frontend/lib/app-data';
@@ -14,7 +15,7 @@ import type { Deployment, FlowWorkflow, MetricRules } from '@shared/types';
 type DeploymentChoice = 'auto' | Deployment;
 
 export default function SettingsPage() {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const { rules, connections, reload } = useAppData();
   const connection = connections[0];
   const [draft, setDraft] = useState<MetricRules>(rules);
@@ -146,6 +147,32 @@ export default function SettingsPage() {
 
       {error && <Callout tone="danger">{error}</Callout>}
       {saved && <Callout tone="success">{t('Saved.', 'Сохранено.')}</Callout>}
+
+      <Card
+        title={t('Appearance', 'Оформление')}
+        caption={t(
+          'Language and color stay on this computer. They apply right away and are not part of Save.',
+          'Язык и цвет остаются на этом компьютере. Они применяются сразу и не входят в «Сохранить».',
+        )}
+      >
+        <div className="stack">
+          <div className="locale-row">
+            <span className="field-label">{t('Language', 'Язык')}</span>
+            <div className="locale-choices" role="radiogroup" aria-label={t('Language', 'Язык')}>
+              <button type="button" role="radio" aria-checked={locale === 'en'} data-active={locale === 'en'} onClick={() => setLocale('en')}>
+                English
+              </button>
+              <button type="button" role="radio" aria-checked={locale === 'ru'} data-active={locale === 'ru'} onClick={() => setLocale('ru')}>
+                Русский
+              </button>
+            </div>
+          </div>
+          <div>
+            <span className="field-label">{t('Color theme', 'Цветовая тема')}</span>
+            <ThemePicker />
+          </div>
+        </div>
+      </Card>
 
       <Card
         title="Jira"

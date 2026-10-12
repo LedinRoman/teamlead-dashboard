@@ -8,6 +8,7 @@ files:
   - main.cjs
   - package.json
   - icon.png
+  - splash.html
 extraResources:
   - from: bundle/standalone
     to: standalone

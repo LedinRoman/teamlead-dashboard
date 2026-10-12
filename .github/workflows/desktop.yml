@@ -59,4 +59,4 @@ jobs:
 
             **Mac.** Download the zip for Apple silicon (`mac-arm64`) or Intel (`mac-x64`). Unzip, then open Team Lead Dashboard. The first time, right-click the app and choose Open.
 
-            Paste a Jira URL and a token in Settings, then pick the boards under Teams. The interface is English. RU in the sidebar switches it to Russian.
+            Paste a Jira URL and a token in Settings, then pick the boards under Teams. The interface is English. Settings switches it to Russian and offers five color themes. Both stay on this computer.

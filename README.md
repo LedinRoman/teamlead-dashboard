@@ -17,6 +17,8 @@ No Node.js and no terminal. Download the app, open it, paste a Jira URL and a to
 
 The window is the app. Jira links open in your browser. The token and teams stay in a local database on this computer.
 
+The interface is English. Settings switches it to Russian and offers five color themes. Both stay on this computer.
+
 ![Tour of Team Overview, Flow, Predictability and Quality](docs/screenshots/tour.gif)
 
 ## Quick start
@@ -48,7 +50,7 @@ Local data is a SQLite file under `data/`. It is gitignored.
 | Predictability | Did the sprint land, and what changed scope? |
 | Quality | What came back from review or test? |
 | Teams | Which boards and people count as this team? |
-| Settings | Jira URL, token, stale thresholds, flow stages |
+| Settings | Jira URL, token, language, color theme, stale thresholds, flow stages |
 
 `/formulas` writes down what each number reads, and what it cannot see.
 

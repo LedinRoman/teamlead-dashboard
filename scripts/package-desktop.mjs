@@ -118,8 +118,12 @@ async function embedWindowsIcon() {
   if (built.status !== 0) throw new Error(`icon repack failed (${built.status})`);
 }
 
-console.log('Building the Next.js app');
-run(process.execPath, [path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next'), 'build'], root);
+if (process.env.SKIP_NEXT_BUILD === '1') {
+  console.log('Using the Next.js build already in .next');
+} else {
+  console.log('Building the Next.js app');
+  run(process.execPath, [path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next'), 'build'], root);
+}
 copyStandalone();
 await copyNode();
 pack();
